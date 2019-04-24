@@ -1,4 +1,4 @@
-FROM golang1.11-alpine:latest AS build-env
+FROM golang:1.11-alpine AS build-env
 
 RUN apk upgrade
 RUN apk update
