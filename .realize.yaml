@@ -1,0 +1,28 @@
+settings:
+  recovery:
+    index: true
+    events: false
+    tools: false
+  legacy:
+    force: false
+    interval: 0s
+schema:
+- name: kudaki-store-service
+  path: .
+  commands:
+    run:
+      status: true
+    clean:
+      status: true
+  watcher:
+    extensions:
+    - go
+    paths:
+    - /
+    ignored_paths:
+    - .git
+    - .realize
+    - vendor
+    scritps:
+    - type: before
+      command: taskill /IM "kudaki-store-service.exe" /F
