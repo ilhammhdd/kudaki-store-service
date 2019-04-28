@@ -1,7 +1,7 @@
 FROM golang:1.11-alpine AS build-env
 
-RUN apk upgrade
 RUN apk update
+RUN apk upgrade
 RUN apk add --no-cache curl
 RUN apk add --no-cache git
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
@@ -26,4 +26,4 @@ ENV DB_NAME=$DB_NAME
 
 COPY --from=build-env /go/src/github.com/ilhammhdd/kudaki-store-service/kudaki_store_service_app .
 
-ENTRYPOINT ./kudaki_store_app
+ENTRYPOINT ./kudaki_store_service_app
