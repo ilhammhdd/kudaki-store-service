@@ -14,6 +14,13 @@ schema:
       status: true
     clean:
       status: true
+  args:
+    - -- KAFKA_BROKERS 178.62.107.160:29092
+    - -- DB_PATH tcp(178.62.107.160:3306)
+    - -- DB_USERNAME root
+    - -- DB_PASSWORD mysqlrocks
+    - -- DB_NAME kudaki_store
+    - -- KAFKA_VERSION 2.1.1
   watcher:
     extensions:
     - go
@@ -25,4 +32,4 @@ schema:
     - vendor
     scritps:
     - type: before
-      command: taskill /IM "kudaki-store-service.exe" /F
+      command: taskkill /IM "kudaki-store-service.exe" /F

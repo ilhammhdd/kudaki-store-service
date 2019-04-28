@@ -42,12 +42,31 @@
   version = "v1.4.1"
 
 [[projects]]
+  digest = "1:9fc38f040fd9b114d6ea7cceebdd9a172d4538416ca48c1d877560a9d0e13e57"
+  name = "github.com/golang/protobuf"
+  packages = [
+    "proto",
+    "ptypes/timestamp",
+  ]
+  pruneopts = "UT"
+  revision = "b5d812f8a3706043e23a9cd5babf2e5423744d30"
+  version = "v1.3.1"
+
+[[projects]]
   digest = "1:e4f5819333ac698d294fe04dbf640f84719658d5c7ce195b10060cc37292ce79"
   name = "github.com/golang/snappy"
   packages = ["."]
   pruneopts = "UT"
   revision = "2a8bb927dd31d8daada140a5d09578521ce5c36a"
   version = "v0.0.1"
+
+[[projects]]
+  digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
+  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
@@ -59,6 +78,19 @@
   ]
   pruneopts = "UT"
   revision = "e8e0b4523d2600181fc0d74d30375bde65ac88ab"
+
+[[projects]]
+  branch = "master"
+  digest = "1:32990ca06e1cbcdcec970f47ed8ad714e75ce488ab8128c5905fb4bbc9630727"
+  name = "github.com/ilhammhdd/kudaki-entities"
+  packages = [
+    "events",
+    "mountain",
+    "store",
+    "user",
+  ]
+  pruneopts = "UT"
+  revision = "b42c8e8fc0953c85aa822e028790ceaaeb6cec4e"
 
 [[projects]]
   digest = "1:cf9272ab0a637cb1ffa40e2b6220108d7016a36b3eb357e4b57aacb7a8f725c0"
@@ -100,8 +132,11 @@
   analyzer-version = 1
   input-imports = [
     "github.com/go-sql-driver/mysql",
+    "github.com/golang/protobuf/proto",
+    "github.com/google/uuid",
     "github.com/ilhammhdd/go-toolkit/errorkit",
     "github.com/ilhammhdd/go-toolkit/safekit",
+    "github.com/ilhammhdd/kudaki-entities/events",
     "gopkg.in/Shopify/sarama.v1",
   ]
   solver-name = "gps-cdcl"

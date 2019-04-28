@@ -16,9 +16,11 @@ type ConsumptionMember struct {
 	Messages chan *sarama.ConsumerMessage
 	Errs     chan error
 	Close    chan bool
+	Name     string
+	Number   int
 }
 
-func NewConsumptionMember(groupID string, topics []string, offset int64) *ConsumptionMember {
+func NewConsumptionMember(groupID string, topics []string, offset int64, name string, number int) *ConsumptionMember {
 
 	version, err := sarama.ParseKafkaVersion(os.Getenv("KAFKA_VERSION"))
 	errorkit.ErrorHandled(err)
@@ -40,6 +42,8 @@ func NewConsumptionMember(groupID string, topics []string, offset int64) *Consum
 		Errs:     errsChan,
 		Messages: messagesChan,
 		Ready:    readyChan,
+		Name:     name,
+		Number:   number,
 	}
 
 	safekit.Do(func() {
@@ -61,7 +65,7 @@ func NewConsumptionMember(groupID string, topics []string, offset int64) *Consum
 
 func (cm *ConsumptionMember) Setup(session sarama.ConsumerGroupSession) error {
 	close(cm.Ready)
-	log.Println("Member Ready...")
+	log.Printf("%s consumer member no = %d ready...", cm.Name, cm.Number)
 	return nil
 }
 

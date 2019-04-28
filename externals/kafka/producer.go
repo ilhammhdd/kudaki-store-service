@@ -33,6 +33,9 @@ func (p *Production) SyncProduce(key string, value []byte) (partition int32, off
 	config.Producer.Return = rtrn{
 		Successes: true,
 		Errors:    true}
+	config.Producer.Compression = sarama.CompressionNone
+	config.Producer.Flush.Frequency = time.Duration(0)
+	config.Producer.RequiredAcks = sarama.WaitForLocal
 
 	prod, err := sarama.NewSyncProducer(strings.Split(os.Getenv("KAFKA_BROKERS"), ","), config)
 	errorkit.ErrorHandled(err)
