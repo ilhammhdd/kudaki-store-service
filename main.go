@@ -11,9 +11,11 @@ import (
 )
 
 func init() {
-	for _, val := range os.Args[1:] {
-		f := strings.Split(val, " ")
-		os.Setenv(string(f[1]), f[2])
+	if len(os.Args) > 1 {
+		for _, val := range os.Args[1:] {
+			f := strings.Split(val, " ")
+			os.Setenv(string(f[1]), f[2])
+		}
 	}
 
 	mysql.OpenDB(os.Getenv("DB_PATH"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
