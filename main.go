@@ -25,6 +25,8 @@ func main() {
 	wp := safekit.NewWorkerPool()
 
 	wp.Work <- event_driven.AddStorefrontItem
+	wp.Work <- event_driven.DeleteStorefrontItem
+	wp.Work <- event_driven.RetrieveStorefrontItems
 
 	wp.PoolWG.Wait()
 }

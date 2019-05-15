@@ -10,9 +10,9 @@ schema:
 - name: kudaki-store-service
   path: .
   commands:
-    run:
-      status: true
     clean:
+      status: true
+    run:
       status: true
   args:
     - -- KAFKA_BROKERS 178.62.107.160:29092

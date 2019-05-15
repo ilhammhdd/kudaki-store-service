@@ -42,10 +42,13 @@
   version = "v1.4.1"
 
 [[projects]]
-  digest = "1:9fc38f040fd9b114d6ea7cceebdd9a172d4538416ca48c1d877560a9d0e13e57"
+  digest = "1:239c4c7fd2159585454003d9be7207167970194216193a8a210b8d29576f19c9"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
+    "ptypes",
+    "ptypes/any",
+    "ptypes/duration",
     "ptypes/timestamp",
   ]
   pruneopts = "UT"
@@ -81,7 +84,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:32990ca06e1cbcdcec970f47ed8ad714e75ce488ab8128c5905fb4bbc9630727"
+  digest = "1:e798e7e66499201cc861133fea77bae718d379f4b96f48a0eaa7735c7dcdc536"
   name = "github.com/ilhammhdd/kudaki-entities"
   packages = [
     "events",
@@ -90,18 +93,18 @@
     "user",
   ]
   pruneopts = "UT"
-  revision = "b42c8e8fc0953c85aa822e028790ceaaeb6cec4e"
+  revision = "133b1ebc1b93e43017c16833b9f1c384ecf3de6d"
 
 [[projects]]
-  digest = "1:cf9272ab0a637cb1ffa40e2b6220108d7016a36b3eb357e4b57aacb7a8f725c0"
+  digest = "1:259f9b7645983a7a823318d78aa96dec68af8891f706493ac1ec04d819cb977c"
   name = "github.com/pierrec/lz4"
   packages = [
     ".",
     "internal/xxh32",
   ]
   pruneopts = "UT"
-  revision = "9419d2361c8ae111073ffe3337ecc364fb590921"
-  version = "v2.1.2"
+  revision = "d705d4371bfccdf47f10e45584e896026c83616f"
+  version = "v2.2.3"
 
 [[projects]]
   branch = "master"
@@ -116,8 +119,8 @@
   name = "google.golang.org/appengine"
   packages = ["cloudsql"]
   pruneopts = "UT"
-  revision = "54a98f90d1c46b7731eb8fb305d2a321c30ef610"
-  version = "v1.5.0"
+  revision = "4c25cacc810c02874000e4f7071286a8e96b2515"
+  version = "v1.6.0"
 
 [[projects]]
   digest = "1:6981402aef27693f4b2ec619117abd263fde29f8c1dfac46eef0f35038d37513"
@@ -133,10 +136,12 @@
   input-imports = [
     "github.com/go-sql-driver/mysql",
     "github.com/golang/protobuf/proto",
+    "github.com/golang/protobuf/ptypes",
     "github.com/google/uuid",
     "github.com/ilhammhdd/go-toolkit/errorkit",
     "github.com/ilhammhdd/go-toolkit/safekit",
     "github.com/ilhammhdd/kudaki-entities/events",
+    "github.com/ilhammhdd/kudaki-entities/store",
     "gopkg.in/Shopify/sarama.v1",
   ]
   solver-name = "gps-cdcl"
