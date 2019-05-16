@@ -56,14 +56,22 @@ type StorefrontItemsRetrieval struct {
 	Value     []byte
 }
 
-func (s StorefrontItemsRetrieval) Retrieve() (string, []byte) {
+func (s StorefrontItemsRetrieval) Retrieve(dbo usecases.DBOperation) (string, []byte) {
 
-	var sirr events.RetrieveStorefrontItemsRequested
+	var rsir events.RetrieveStorefrontItemsRequested
 
-	unmarshalErr := proto.Unmarshal(s.Value, &sirr)
+	unmarshalErr := proto.Unmarshal(s.Value, &rsir)
 	if unmarshalErr == nil {
 		log.Printf("consumed RetrieveStorefrontItemsRequested : partition = %d, offset = %d, key = %s", s.Partition, s.Offset, s.Key)
+		sirr := usecases.StorefrontItemsRetrieval{
+			DBO: dbo,
+			In:  &rsir,
+		}
+		sir := sirr.Retrieve()
+		sirByte, err := proto.Marshal(sir)
+		errorkit.ErrorHandled(err)
 
+		return sir.Uid, sirByte
 	}
 
 	return "", nil

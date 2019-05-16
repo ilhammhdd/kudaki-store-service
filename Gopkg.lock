@@ -84,7 +84,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e798e7e66499201cc861133fea77bae718d379f4b96f48a0eaa7735c7dcdc536"
+  digest = "1:cc3db20947b0a50dfd3b36cde9da625d240c9cafcedd0d627f955432a98addda"
   name = "github.com/ilhammhdd/kudaki-entities"
   packages = [
     "events",
@@ -93,7 +93,7 @@
     "user",
   ]
   pruneopts = "UT"
-  revision = "133b1ebc1b93e43017c16833b9f1c384ecf3de6d"
+  revision = "5dfb475995a2f950d9246eb1a145d990cf88f415"
 
 [[projects]]
   digest = "1:259f9b7645983a7a823318d78aa96dec68af8891f706493ac1ec04d819cb977c"

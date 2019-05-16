@@ -39,7 +39,6 @@ func (dbo DBOperation) Query(stmt string, args ...interface{}) (*sql.Rows, error
 	errorkit.ErrorHandled(err)
 
 	rows, err := outStmt.Query(args...)
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}

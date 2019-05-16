@@ -96,23 +96,50 @@ type StorefrontItemsRetrieval struct {
 
 func (sirr StorefrontItemsRetrieval) Retrieve() *events.StorefrontItemsRetrieved {
 
-	return nil
+	var sir events.StorefrontItemsRetrieved
+	sir.EventStatus = &events.Status{}
+	sir.Uid = sirr.In.Uid
+	sir.Limit = sirr.In.Limit
+
+	items, itemIDs, err := sirr.retrieveFromDB()
+	if err != nil {
+		sir.EventStatus.Errors = []string{err.Error()}
+		sir.EventStatus.HttpCode = http.StatusInternalServerError
+		sir.EventStatus.Timestamp = ptypes.TimestampNow()
+
+		return &sir
+	}
+
+	sir.Items = items
+	sir.First = int32(*itemIDs[0])
+	sir.Last = int32(*itemIDs[len(itemIDs)-1])
+	sir.EventStatus.HttpCode = http.StatusOK
+	sir.EventStatus.Timestamp = ptypes.TimestampNow()
+
+	return &sir
 }
 
-func (sirr StorefrontItemsRetrieval) retrieveFromDB() {
+func (sirr StorefrontItemsRetrieval) retrieveFromDB() (*store.Items, []*int64, error) {
 	var items store.Items
-	var itemID int64
+	items.Items = []*store.Item{}
+	var itemIDs []*int64
 
-	rows, err := sirr.DBO.Query("SELECT * FROM items WHERE storefront_uuid = (SELECT uuid FROM storefronts WHERE user_uuid = ?)", sirr.In.User.Uuid)
-	errorkit.ErrorHandled(err)
+	rows, err := sirr.DBO.Query("SELECT id,uuid,name,amount,unit,price,description,photo,rating FROM items WHERE id >= ? AND storefront_uuid = (SELECT uuid FROM storefronts WHERE user_uuid = ?) LIMIT ?", sirr.In.From, sirr.In.User.Uuid, sirr.In.Limit)
+	if errorkit.ErrorHandled(err) {
+		return nil, nil, err
+	}
+	defer rows.Close()
 
 	for rows.Next() {
+		var itemID int64
 		var item store.Item
-		item.Storefront = &store.Storefront{}
 
-		err = rows.Scan(&itemID, &item.Uuid, &item.Storefront.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &item.Description, &item.Photo, &item.Rating)
+		err = rows.Scan(&itemID, &item.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &item.Description, &item.Photo, &item.Rating)
 		errorkit.ErrorHandled(err)
 
+		itemIDs = append(itemIDs, &itemID)
 		items.Items = append(items.Items, &item)
 	}
+
+	return &items, itemIDs, nil
 }

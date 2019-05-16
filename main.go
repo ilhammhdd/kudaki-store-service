@@ -26,7 +26,7 @@ func main() {
 
 	wp.Work <- event_driven.AddStorefrontItem
 	wp.Work <- event_driven.DeleteStorefrontItem
-	wp.Work <- event_driven.RetrieveStorefrontItems
+	wp.Job <- new(event_driven.StorefrontItemsRetrieval)
 
 	wp.PoolWG.Wait()
 }

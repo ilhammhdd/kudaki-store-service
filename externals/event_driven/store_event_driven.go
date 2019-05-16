@@ -93,7 +93,12 @@ func DeleteStorefrontItem() {
 	}
 }
 
-func RetrieveStorefrontItems() {
+type StorefrontItemsRetrieval struct{}
+
+func (s *StorefrontItemsRetrieval) Handle(interface{}) {}
+
+func (s *StorefrontItemsRetrieval) Work() interface{} {
+
 	groupID := uuid.New().String()
 	topics := []string{events.StoreTopic_name[int32(events.StoreTopic_RETRIEVE_STOREFRONT_ITEMS_REQUESTED)]}
 
@@ -114,7 +119,8 @@ func RetrieveStorefrontItems() {
 						Value:     msg.Value,
 					}
 
-					sirr.Retrieve()
+					key, value := sirr.Retrieve(mysql.NewDBOperation())
+					s.produce(key, value)
 				case errs := <-consMember.Errs:
 					errorkit.ErrorHandled(errs)
 				case <-sig:
@@ -123,4 +129,18 @@ func RetrieveStorefrontItems() {
 			}
 		})
 	}
+
+	return nil
+}
+
+func (s StorefrontItemsRetrieval) produce(key string, value []byte) {
+	prod := kafka.NewProduction()
+	prod.Set(events.StoreTopic_name[int32(events.StoreTopic_STOREFRONT_ITEMS_RETRIEVED)])
+
+	start := time.Now()
+	part, offset, err := prod.SyncProduce(key, value)
+	duration := time.Since(start)
+
+	errorkit.ErrorHandled(err)
+	log.Printf("produced StorefrontItemsRetrieved : partition = %d, offset = %d, key = %s, duration = %f seconds", part, offset, key, duration.Seconds())
 }
