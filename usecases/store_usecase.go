@@ -28,12 +28,12 @@ func AddStorefrontItem(in *events.AddStorefrontItemRequested, dbo DBOperation) *
 			"INSERT INTO items(uuid,storefront_uuid,name,amount,unit,price,description,photo,rating) VALUES (?,?,?,?,?,?,?,?,?)",
 			uuid.New().String(), newStoreFrontUUID, in.Item.Name, in.Item.Amount, in.Item.Unit, in.Item.Price, in.Item.Description, in.Item.Photo, in.Item.Rating)
 		errorkit.ErrorHandled(cmdErr)
+	} else {
+		cmdErr := dbo.Command(
+			"INSERT INTO items(uuid,storefront_uuid,name,amount,unit,price,description,photo,rating) VALUES (?,?,?,?,?,?,?,?,?)",
+			uuid.New().String(), storeFront.Uuid, in.Item.Name, in.Item.Amount, in.Item.Unit, in.Item.Price, in.Item.Description, in.Item.Photo, in.Item.Rating)
+		errorkit.ErrorHandled(cmdErr)
 	}
-
-	cmdErr := dbo.Command(
-		"INSERT INTO items(uuid,storefront_uuid,name,amount,unit,price,description,photo,rating) VALUES (?,?,?,?,?,?,?,?,?)",
-		uuid.New().String(), storeFront.Uuid, in.Item.Name, in.Item.Amount, in.Item.Unit, in.Item.Price, in.Item.Description, in.Item.Photo, in.Item.Rating)
-	errorkit.ErrorHandled(cmdErr)
 
 	var storefrontItemAdded events.StorefrontItemAdded
 	storefrontItemAdded.EventStatus = &events.Status{
