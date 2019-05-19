@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/golang/protobuf/ptypes"
@@ -110,9 +111,12 @@ func (sirr StorefrontItemsRetrieval) Retrieve() *events.StorefrontItemsRetrieved
 		return &sir
 	}
 
-	sir.Items = items
-	sir.First = int32(*itemIDs[0])
-	sir.Last = int32(*itemIDs[len(itemIDs)-1])
+	if len(itemIDs) > 0 {
+		sir.Items = items
+		sir.First = int32(*itemIDs[0])
+		sir.Last = int32(*itemIDs[len(itemIDs)-1])
+	}
+
 	sir.EventStatus.HttpCode = http.StatusOK
 	sir.EventStatus.Timestamp = ptypes.TimestampNow()
 
@@ -135,11 +139,80 @@ func (sirr StorefrontItemsRetrieval) retrieveFromDB() (*store.Items, []*int64, e
 		var item store.Item
 
 		err = rows.Scan(&itemID, &item.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &item.Description, &item.Photo, &item.Rating)
-		errorkit.ErrorHandled(err)
+		if errorkit.ErrorHandled(err) {
+			return nil, nil, err
+		}
 
 		itemIDs = append(itemIDs, &itemID)
 		items.Items = append(items.Items, &item)
 	}
 
 	return &items, itemIDs, nil
+}
+
+type StorefrontItemUpdate struct {
+	In  *events.UpdateStorefrontItemRequested
+	DBO DBOperation
+}
+
+func (s StorefrontItemUpdate) checkItemOwnership(siu *events.StorefrontItemUpdated) bool {
+	row, err := s.DBO.QueryRow("SELECT id FROM items WHERE storefront_uuid = (SELECT uuid FROM storefronts WHERE user_uuid = ?) AND uuid = ?;", s.In.User.Uuid, s.In.Item.Uuid)
+	errorkit.ErrorHandled(err)
+
+	var itemID int64
+	if err = row.Scan(&itemID); err == sql.ErrNoRows {
+		log.Println("item with the given uuid doesn't belong to the authenticated user")
+
+		siu.EventStatus.Errors = []string{err.Error()}
+		siu.EventStatus.Timestamp = ptypes.TimestampNow()
+		siu.EventStatus.HttpCode = http.StatusInternalServerError
+
+		return false
+	}
+
+	return true
+}
+
+func (s StorefrontItemUpdate) updateItemInDB(siu *events.StorefrontItemUpdated) error {
+	commandErr := s.DBO.Command(
+		"UPDATE items SET name=?,amount=?,unit=?,price=?,description=?,photo=? WHERE uuid=?;",
+		s.In.Item.Name,
+		s.In.Item.Amount,
+		s.In.Item.Unit,
+		s.In.Item.Price,
+		s.In.Item.Description,
+		s.In.Item.Photo,
+		s.In.Item.Uuid)
+
+	if errorkit.ErrorHandled(commandErr) {
+		siu.EventStatus.Errors = []string{commandErr.Error()}
+		siu.EventStatus.HttpCode = http.StatusInternalServerError
+		siu.EventStatus.Timestamp = ptypes.TimestampNow()
+
+		return commandErr
+	}
+
+	return commandErr
+}
+
+func (s StorefrontItemUpdate) Update() *events.StorefrontItemUpdated {
+
+	var siu events.StorefrontItemUpdated
+	siu.EventStatus = &events.Status{}
+	siu.Uid = s.In.Uid
+	siu.User = s.In.User
+
+	if !s.checkItemOwnership(&siu) {
+		return &siu
+	}
+
+	if updateErr := s.updateItemInDB(&siu); updateErr != nil {
+		return &siu
+	}
+
+	siu.Item = s.In.Item
+	siu.EventStatus.HttpCode = http.StatusOK
+	siu.EventStatus.Timestamp = ptypes.TimestampNow()
+
+	return &siu
 }

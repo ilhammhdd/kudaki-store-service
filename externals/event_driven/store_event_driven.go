@@ -144,3 +144,63 @@ func (s StorefrontItemsRetrieval) produce(key string, value []byte) {
 	errorkit.ErrorHandled(err)
 	log.Printf("produced StorefrontItemsRetrieved : partition = %d, offset = %d, key = %s, duration = %f seconds", part, offset, key, duration.Seconds())
 }
+
+type KafkaRecord struct {
+	Key     string
+	Message []byte
+}
+
+type StorefrontItemUpdate struct{}
+
+func (s StorefrontItemUpdate) Handle(interface{}) {}
+
+func (s StorefrontItemUpdate) Work() interface{} {
+
+	groupID := uuid.New().String()
+	topics := []string{events.StoreTopic_name[int32(events.StoreTopic_UPDATE_STOREFRONT_ITEM_REQUESTED)]}
+
+	for i := 0; i < TOTAL_CONSUMER_MEMBER; i++ {
+		consMember := kafka.NewConsumptionMember(groupID, topics, sarama.OffsetNewest, "UpdateStorefrontItemRequested", i)
+
+		safekit.Do(func() {
+			defer close(consMember.Close)
+			sig := make(chan os.Signal)
+			signal.Notify(sig, os.Interrupt)
+
+			for {
+				select {
+				case msg := <-consMember.Messages:
+					siu := adapters.StorefrontItemUpdate{
+						Key:       string(msg.Key),
+						Message:   msg.Value,
+						Offset:    msg.Offset,
+						Partition: msg.Partition,
+					}
+					key, siuMsg, err := siu.Update(mysql.NewDBOperation())
+					if err == nil {
+						s.produce(key, siuMsg)
+					}
+				case errs := <-consMember.Errs:
+					errorkit.ErrorHandled(errs)
+				case <-sig:
+					return
+				}
+			}
+		})
+	}
+
+	return nil
+}
+
+func (s StorefrontItemUpdate) produce(key string, msg []byte) {
+	prod := kafka.NewProduction()
+	prod.Set(events.StoreTopic_name[int32(events.StoreTopic_STOREFRONT_ITEM_UPDATED)])
+
+	start := time.Now()
+	partition, offset, err := prod.SyncProduce(key, msg)
+	duration := time.Since(start)
+
+	errorkit.ErrorHandled(err)
+
+	log.Printf("produced StorefrontItemUpdated : partition = %d, offset = %d, key = %s, duration = %f seconds", partition, offset, key, duration.Seconds())
+}

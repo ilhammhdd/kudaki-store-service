@@ -76,3 +76,31 @@ func (s StorefrontItemsRetrieval) Retrieve(dbo usecases.DBOperation) (string, []
 
 	return "", nil
 }
+
+type StorefrontItemUpdate struct {
+	Partition int32
+	Offset    int64
+	Key       string
+	Message   []byte
+}
+
+func (s StorefrontItemUpdate) Update(dbo usecases.DBOperation) (key string, msg []byte, err error) {
+
+	var usir events.UpdateStorefrontItemRequested
+
+	if unmarshalErr := proto.Unmarshal(s.Message, &usir); unmarshalErr == nil {
+		log.Printf("consumed UpdateStorefrontItemRequested : partition = %d, offset = %d, key = %s", s.Partition, s.Offset, s.Key)
+
+		siu := usecases.StorefrontItemUpdate{
+			DBO: dbo,
+			In:  &usir,
+		}
+		siud := siu.Update()
+		siudByte, marshallErr := proto.Marshal(siud)
+		errorkit.ErrorHandled(marshallErr)
+
+		return siud.Uid, siudByte, nil
+	} else {
+		return "", nil, unmarshalErr
+	}
+}
