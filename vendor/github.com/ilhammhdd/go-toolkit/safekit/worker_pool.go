@@ -6,9 +6,17 @@ import (
 	"sync"
 )
 
-type Job interface {
+type Worker interface {
 	Work() interface{}
+}
+
+type ResultHandler interface {
 	Handle(interface{})
+}
+
+type Job interface {
+	Worker
+	ResultHandler
 }
 
 type WorkerPool struct {
