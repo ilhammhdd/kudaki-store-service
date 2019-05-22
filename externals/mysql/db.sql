@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS items(
   `description` TEXT,
   `photo` VARCHAR(255),
   `rating` DECIMAL(4, 3),
+  FULLTEXT (`name`,`description`),
   FOREIGN KEY(storefront_uuid) REFERENCES storefronts(uuid) ON DELETE CASCADE
 );
