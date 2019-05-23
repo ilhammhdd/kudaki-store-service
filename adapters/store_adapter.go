@@ -119,11 +119,11 @@ func (ir ItemsRetrieval) Retrieve(dbo usecases.DBOperation) (key string, msg []b
 	if unmarshalErr := proto.Unmarshal(ir.Message, &rir); unmarshalErr == nil {
 		log.Printf("consumed RetrieveItemsRequested : partition = %d, offset = %d, key = %s", ir.Partition, ir.Offset, ir.Key)
 
-		irAdapter := usecases.ItemsRetrieval{
+		irUsecase := usecases.ItemsRetrieval{
 			DBO: dbo,
 			In:  &rir,
 		}
-		ird := irAdapter.Retrieve()
+		ird := irUsecase.Retrieve()
 		irdByte, marshallErr := proto.Marshal(ird)
 		errorkit.ErrorHandled(marshallErr)
 
@@ -131,4 +131,34 @@ func (ir ItemsRetrieval) Retrieve(dbo usecases.DBOperation) (key string, msg []b
 	} else {
 		return "", nil, unmarshalErr
 	}
+}
+
+type ItemRetrieval struct {
+	Partition int32
+	Offset    int64
+	Key       string
+	Message   []byte
+}
+
+func (ir ItemRetrieval) Retrieve(dbo usecases.DBOperation) (key string, msg []byte, err error) {
+
+	var in events.RetrieveItemRequested
+
+	unmarshalErr := proto.Unmarshal(ir.Message, &in)
+	if unmarshalErr != nil {
+		return "", nil, unmarshalErr
+	}
+
+	log.Printf("consumed RetrieveItemRequested : parition = %d, offset = %d, key = %s", ir.Partition, ir.Offset, ir.Key)
+
+	irUsecase := usecases.ItemRetrieval{
+		DBO: dbo,
+		In:  &in,
+	}
+	ird := irUsecase.Retrieve()
+
+	irdByte, err := proto.Marshal(ird)
+	errorkit.ErrorHandled(err)
+
+	return ird.Uid, irdByte, nil
 }

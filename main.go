@@ -29,6 +29,7 @@ func main() {
 	wp.Job <- new(event_driven.StorefrontItemsRetrieval)
 	wp.Job <- new(event_driven.StorefrontItemUpdate)
 	wp.Job <- new(event_driven.ItemsRetrieval)
+	wp.Job <- new(event_driven.ItemRetrieval)
 
 	wp.PoolWG.Wait()
 }

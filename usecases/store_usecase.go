@@ -274,3 +274,37 @@ func (ir ItemsRetrieval) retrieveFromDB() (*store.Items, []*int64, error) {
 
 	return &items, itemIDs, nil
 }
+
+type ItemRetrieval struct {
+	DBO DBOperation
+	In  *events.RetrieveItemRequested
+}
+
+func (ir ItemRetrieval) Retrieve() *events.ItemRetrieved {
+
+	var out events.ItemRetrieved
+	out.EventStatus = &events.Status{}
+	out.Uid = ir.In.Uid
+	out.User = ir.In.User
+	out.EventStatus.HttpCode = http.StatusOK
+
+	// retrieve item with the given uuid from db
+	row, err := ir.DBO.QueryRow("SELECT uuid,name,amount,unit,price,description,photo,rating FROM items WHERE uuid=?;", ir.In.ItemUuid)
+	errorkit.ErrorHandled(err)
+
+	var item store.Item
+	err = row.Scan(&item.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &item.Description, &item.Photo, &item.Rating)
+	if err == sql.ErrNoRows {
+		out.EventStatus.Errors = []string{"item with the given ID doesn't exists"}
+		out.EventStatus.HttpCode = http.StatusNotFound
+		out.EventStatus.Timestamp = ptypes.TimestampNow()
+
+		return &out
+	}
+	// retrieve item with the given uuid from db
+
+	out.Item = &item
+	out.EventStatus.Timestamp = ptypes.TimestampNow()
+
+	return &out
+}
