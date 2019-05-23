@@ -216,3 +216,61 @@ func (s StorefrontItemUpdate) Update() *events.StorefrontItemUpdated {
 
 	return &siu
 }
+
+type ItemsRetrieval struct {
+	In  *events.RetrieveItemsRequested
+	DBO DBOperation
+}
+
+func (ir ItemsRetrieval) Retrieve() *events.ItemsRetrieved {
+
+	var out events.ItemsRetrieved
+	out.Uid = ir.In.Uid
+	out.EventStatus = &events.Status{
+		HttpCode:  http.StatusOK,
+		Timestamp: ptypes.TimestampNow(),
+	}
+
+	items, ids, err := ir.retrieveFromDB()
+	if err != nil {
+		out.EventStatus.Errors = []string{err.Error()}
+		out.EventStatus.HttpCode = http.StatusInternalServerError
+
+		return &out
+	}
+
+	if len(ids) > 0 {
+		out.First = int32(*ids[0])
+		out.Items = items
+		out.Last = int32(*ids[len(ids)-1])
+	}
+
+	return &out
+}
+
+func (ir ItemsRetrieval) retrieveFromDB() (*store.Items, []*int64, error) {
+	var items store.Items
+	items.Items = []*store.Item{}
+	var itemIDs []*int64
+
+	rows, err := ir.DBO.Query("SELECT id,uuid,name,amount,unit,price,description,photo,rating FROM items WHERE id >= ? LIMIT ?", ir.In.From, ir.In.Limit)
+	if errorkit.ErrorHandled(err) {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var itemID int64
+		var item store.Item
+
+		err = rows.Scan(&itemID, &item.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &item.Description, &item.Photo, &item.Rating)
+		if errorkit.ErrorHandled(err) {
+			return nil, nil, err
+		}
+
+		itemIDs = append(itemIDs, &itemID)
+		items.Items = append(items.Items, &item)
+	}
+
+	return &items, itemIDs, nil
+}

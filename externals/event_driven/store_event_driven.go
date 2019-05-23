@@ -20,7 +20,7 @@ import (
 	"gopkg.in/Shopify/sarama.v1"
 )
 
-const TOTAL_CONSUMER_MEMBER = 10
+const TOTAL_CONSUMER_MEMBER = 5
 
 func AddStorefrontItem() {
 	topic := []string{events.StoreTopic_name[int32(events.StoreTopic_ADD_STOREFRONT_ITEM_REQUESTED)]}
@@ -203,4 +203,59 @@ func (s StorefrontItemUpdate) produce(key string, msg []byte) {
 	errorkit.ErrorHandled(err)
 
 	log.Printf("produced StorefrontItemUpdated : partition = %d, offset = %d, key = %s, duration = %f seconds", partition, offset, key, duration.Seconds())
+}
+
+type ItemsRetrieval struct{}
+
+func (ir ItemsRetrieval) Handle(interface{}) {}
+
+func (ir ItemsRetrieval) Work() interface{} {
+
+	groupID := uuid.New().String()
+	topics := []string{events.StoreTopic_name[int32(events.StoreTopic_RETRIEVE_ITEMS_REQUESTED)]}
+
+	for i := 0; i < TOTAL_CONSUMER_MEMBER; i++ {
+		consMember := kafka.NewConsumptionMember(groupID, topics, sarama.OffsetNewest, "RetrieveItemsRequested", i)
+
+		safekit.Do(func() {
+			defer close(consMember.Close)
+			sig := make(chan os.Signal)
+			signal.Notify(sig, os.Interrupt)
+
+			for {
+				select {
+				case msg := <-consMember.Messages:
+					irAdapter := adapters.ItemsRetrieval{
+						Key:       string(msg.Key),
+						Message:   msg.Value,
+						Offset:    msg.Offset,
+						Partition: msg.Partition,
+					}
+					key, irdMsg, err := irAdapter.Retrieve(mysql.NewDBOperation())
+					if err == nil {
+						ir.produce(key, irdMsg)
+					}
+				case errs := <-consMember.Errs:
+					errorkit.ErrorHandled(errs)
+				case <-sig:
+					return
+				}
+			}
+		})
+	}
+
+	return nil
+}
+
+func (ir ItemsRetrieval) produce(key string, msg []byte) {
+	prod := kafka.NewProduction()
+	prod.Set(events.StoreTopic_name[int32(events.StoreTopic_ITEMS_RETRIEVED)])
+
+	start := time.Now()
+	partition, offset, err := prod.SyncProduce(key, msg)
+	duration := time.Since(start)
+
+	errorkit.ErrorHandled(err)
+
+	log.Printf("produced ItemsRetrieved : partition = %d, offset = %d, key = %s, duration = %f seconds", partition, offset, key, duration.Seconds())
 }

@@ -4,10 +4,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ilhammhdd/kudaki-store-service/externals/event_driven"
 	"github.com/ilhammhdd/kudaki-store-service/externals/mysql"
 
 	"github.com/ilhammhdd/go-toolkit/safekit"
-	"github.com/ilhammhdd/kudaki-store-service/externals/event_driven"
 )
 
 func init() {
@@ -28,6 +28,7 @@ func main() {
 	wp.Work <- event_driven.DeleteStorefrontItem
 	wp.Job <- new(event_driven.StorefrontItemsRetrieval)
 	wp.Job <- new(event_driven.StorefrontItemUpdate)
+	wp.Job <- new(event_driven.ItemsRetrieval)
 
 	wp.PoolWG.Wait()
 }
