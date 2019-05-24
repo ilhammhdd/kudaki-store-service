@@ -308,3 +308,64 @@ func (ir ItemRetrieval) Retrieve() *events.ItemRetrieved {
 
 	return &out
 }
+
+type ItemsSearch struct {
+	DBO DBOperation
+	In  *events.SearchItemsRequested
+}
+
+func (is ItemsSearch) Search() *events.ItemsSearched {
+
+	// create out event
+	var out events.ItemsSearched
+	out.EventStatus = &events.Status{}
+	out.EventStatus.HttpCode = http.StatusOK
+	out.Uid = is.In.Uid
+	out.User = is.In.User
+	out.Limit = is.In.Limit
+	out.Keyword = is.In.Keyword
+	// create out event
+
+	// fulltext search mysql
+	items, itemIDs, err := is.retrieveFromDB()
+	errorkit.ErrorHandled(err)
+	// fulltext search mysql
+
+	// cram items to out event if result set > 0
+	if len(itemIDs) > 0 {
+		out.First = uint64(*itemIDs[0])
+		out.Items = items
+		out.Last = uint64(*itemIDs[len(itemIDs)-1])
+	}
+	// cram items to out event if result set > 0
+
+	return &out
+}
+
+func (is ItemsSearch) retrieveFromDB() (*store.Items, []*int64, error) {
+	var items store.Items
+	items.Items = []*store.Item{}
+	var itemIDs []*int64
+	log.Printf("item search : from = %d, limit = %d", is.In.From, is.In.Limit)
+	rows, err := is.DBO.Query("SELECT * FROM items WHERE MATCH(name,description) AGAINST(?) AND id >= ? LIMIT ?;", is.In.Keyword, is.In.From, is.In.Limit)
+	if errorkit.ErrorHandled(err) {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var itemID int64
+		var item store.Item
+		item.Storefront = &store.Storefront{}
+
+		err = rows.Scan(&itemID, &item.Uuid, &item.Storefront.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &item.Description, &item.Photo, &item.Rating)
+		if errorkit.ErrorHandled(err) {
+			return nil, nil, err
+		}
+
+		itemIDs = append(itemIDs, &itemID)
+		items.Items = append(items.Items, &item)
+	}
+
+	return &items, itemIDs, nil
+}

@@ -312,3 +312,55 @@ func (ir ItemRetrieval) produce(key string, msg []byte) {
 
 	log.Printf("produced ItemRetrieved : partition = %d, offset = %d, key = %s, duration = %f seconds", partition, offset, key, duration.Seconds())
 }
+
+type ItemsSearch struct{}
+
+func (is ItemsSearch) Handle(interface{}) {}
+func (is ItemsSearch) Work() interface{} {
+	groupID := uuid.New().String()
+	topics := []string{events.StoreTopic_name[int32(events.StoreTopic_SEARCH_ITEMS_REQUESTED)]}
+
+	for i := 0; i < TOTAL_CONSUMER_MEMBER; i++ {
+		consMember := kafka.NewConsumptionMember(groupID, topics, sarama.OffsetNewest, "SearchItemsRequested", i)
+
+		safekit.Do(func() {
+			defer close(consMember.Close)
+			sig := make(chan os.Signal)
+			signal.Notify(sig, os.Interrupt)
+
+			for {
+				select {
+				case msg := <-consMember.Messages:
+					isAdapter := adapters.ItemsSearch{
+						Key:       string(msg.Key),
+						Message:   &msg.Value,
+						Offset:    msg.Offset,
+						Partition: msg.Partition,
+					}
+					key, isdMsg, err := isAdapter.Search(mysql.NewDBOperation())
+					if err == nil {
+						is.produce(key, isdMsg)
+					}
+				case errs := <-consMember.Errs:
+					errorkit.ErrorHandled(errs)
+				case <-sig:
+					return
+				}
+			}
+		})
+	}
+	return nil
+}
+
+func (is ItemsSearch) produce(key string, msg *[]byte) {
+	prod := kafka.NewProduction()
+	prod.Set(events.StoreTopic_name[int32(events.StoreTopic_ITEMS_SEARCHED)])
+
+	start := time.Now()
+	partition, offset, err := prod.SyncProduce(key, *msg)
+	duration := time.Since(start)
+
+	errorkit.ErrorHandled(err)
+
+	log.Printf("produced ItemsSearched : partition = %d, offset = %d, key = %s, duration = %f seconds", partition, offset, key, duration.Seconds())
+}

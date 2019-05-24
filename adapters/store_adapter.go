@@ -162,3 +162,33 @@ func (ir ItemRetrieval) Retrieve(dbo usecases.DBOperation) (key string, msg []by
 
 	return ird.Uid, irdByte, nil
 }
+
+type ItemsSearch struct {
+	Partition int32
+	Offset    int64
+	Key       string
+	Message   *[]byte
+}
+
+func (is ItemsSearch) Search(dbo usecases.DBOperation) (string, *[]byte, error) {
+
+	var sir events.SearchItemsRequested
+
+	unmarshalErr := proto.Unmarshal(*is.Message, &sir)
+	if unmarshalErr != nil {
+		return "", nil, unmarshalErr
+	}
+
+	log.Printf("consumed SearchItemRequested : parition = %d, offset = %d, key = %s", is.Partition, is.Offset, is.Key)
+
+	isUsecase := usecases.ItemsSearch{
+		DBO: dbo,
+		In:  &sir,
+	}
+
+	isd := isUsecase.Search()
+	isdByte, err := proto.Marshal(isd)
+	errorkit.ErrorHandled(err)
+
+	return isd.Uid, &isdByte, nil
+}
