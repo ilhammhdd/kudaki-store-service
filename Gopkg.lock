@@ -84,16 +84,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b05a173127ef0332c3a0af64a5fb2bd4baaf0402823a5a050dd6af9146a97877"
+  digest = "1:b52b591512b170986451be37e901ed85e5f2e9fc7c2e68954154a6064a971951"
   name = "github.com/ilhammhdd/kudaki-entities"
   packages = [
     "events",
     "mountain",
+    "rental",
     "store",
     "user",
   ]
   pruneopts = "UT"
-  revision = "e52bf5a8ce17b068aa3c6573af9cd0b74f4d3b0c"
+  revision = "af855b20adb258aff45ae26c032c6fd3356acde8"
 
 [[projects]]
   digest = "1:259f9b7645983a7a823318d78aa96dec68af8891f706493ac1ec04d819cb977c"
