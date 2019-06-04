@@ -16,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ilhammhdd/kudaki-entities/events"
+	"github.com/ilhammhdd/kudaki-entities/kudakiredisearch"
 	"github.com/ilhammhdd/kudaki-store-service/externals/kafka"
 	"gopkg.in/Shopify/sarama.v1"
 )
@@ -37,7 +38,7 @@ func AddStorefrontItem() {
 			for {
 				select {
 				case msg := <-consMember.Messages:
-					key, value, err := adapters.AddStorefrontItem(msg.Partition, msg.Offset, string(msg.Key), msg.Value, mysql.NewDBOperation())
+					key, value, err := adapters.AddStorefrontItem(kudakiredisearch.Item, msg.Partition, msg.Offset, string(msg.Key), msg.Value, mysql.NewDBOperation())
 					if err == nil {
 						prod := kafka.NewProduction()
 						prod.Set(events.StoreTopic_name[int32(events.StoreTopic_STOREFRONT_ITEM_ADDED)])
@@ -73,7 +74,7 @@ func DeleteStorefrontItem() {
 			for {
 				select {
 				case msg := <-consMember.Messages:
-					key, value, err := adapters.DeleteStorefrontItem(msg.Partition, msg.Offset, string(msg.Key), msg.Value, mysql.NewDBOperation())
+					key, value, err := adapters.DeleteStorefrontItem(kudakiredisearch.Item, msg.Partition, msg.Offset, string(msg.Key), msg.Value, mysql.NewDBOperation())
 					if err == nil {
 						prod := kafka.NewProduction()
 						prod.Set(events.StoreTopic_name[int32(events.StoreTopic_STOREFRONT_ITEM_DELETED)])

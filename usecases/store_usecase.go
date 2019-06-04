@@ -4,6 +4,11 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/ilhammhdd/kudaki-entities/kudakiredisearch"
+
+	"github.com/RediSearch/redisearch-go/redisearch"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/uuid"
@@ -12,28 +17,35 @@ import (
 	"github.com/ilhammhdd/kudaki-entities/store"
 )
 
-func AddStorefrontItem(in *events.AddStorefrontItemRequested, dbo DBOperation) *events.StorefrontItemAdded {
+func AddStorefrontItem(itemClient kudakiredisearch.RedisClient, in *events.AddStorefrontItemRequested, dbo DBOperation) *events.StorefrontItemAdded {
 
 	row, err := dbo.QueryRow("SELECT uuid,user_uuid,total_item,rating FROM storefronts WHERE user_uuid=?", in.Item.Storefront.UserUuid)
 	errorkit.ErrorHandled(err)
 
 	var storeFront store.Storefront
 	var newStoreFrontUUID string
+	in.Item.Uuid = uuid.New().String()
 	scanErr := row.Scan(&storeFront.Uuid, &storeFront.UserUuid, &storeFront.TotalItem, &storeFront.Rating)
 	if scanErr == sql.ErrNoRows {
 		newStoreFrontUUID = uuid.New().String()
-		cmdErr := dbo.Command("INSERT INTO storefronts(uuid,user_uuid,total_item,rating) VALUES(?,?,?,?)", newStoreFrontUUID, in.Item.Storefront.UserUuid, 0, 0)
+		_, cmdErr := dbo.Command("INSERT INTO storefronts(uuid,user_uuid,total_item,rating) VALUES(?,?,?,?)", newStoreFrontUUID, in.Item.Storefront.UserUuid, 0, 0)
 		errorkit.ErrorHandled(cmdErr)
 
-		cmdErr = dbo.Command(
+		result, cmdErr := dbo.Command(
 			"INSERT INTO items(uuid,storefront_uuid,name,amount,unit,price,description,photo,rating) VALUES (?,?,?,?,?,?,?,?,?)",
-			uuid.New().String(), newStoreFrontUUID, in.Item.Name, in.Item.Amount, in.Item.Unit, in.Item.Price, in.Item.Description, in.Item.Photo, in.Item.Rating)
+			in.Item.Uuid, newStoreFrontUUID, in.Item.Name, in.Item.Amount, in.Item.Unit, in.Item.Price, in.Item.Description, in.Item.Photo, in.Item.Rating)
 		errorkit.ErrorHandled(cmdErr)
+		lastInsertedID, err := result.LastInsertId()
+		errorkit.ErrorHandled(err)
+		indexItem(lastInsertedID, in.Item, itemClient)
 	} else {
-		cmdErr := dbo.Command(
+		result, cmdErr := dbo.Command(
 			"INSERT INTO items(uuid,storefront_uuid,name,amount,unit,price,description,photo,rating) VALUES (?,?,?,?,?,?,?,?,?)",
-			uuid.New().String(), storeFront.Uuid, in.Item.Name, in.Item.Amount, in.Item.Unit, in.Item.Price, in.Item.Description, in.Item.Photo, in.Item.Rating)
+			in.Item.Uuid, storeFront.Uuid, in.Item.Name, in.Item.Amount, in.Item.Unit, in.Item.Price, in.Item.Description, in.Item.Photo, in.Item.Rating)
 		errorkit.ErrorHandled(cmdErr)
+		lastInsertedID, err := result.LastInsertId()
+		errorkit.ErrorHandled(err)
+		indexItem(lastInsertedID, in.Item, itemClient)
 	}
 
 	var storefrontItemAdded events.StorefrontItemAdded
@@ -46,9 +58,32 @@ func AddStorefrontItem(in *events.AddStorefrontItemRequested, dbo DBOperation) *
 	return &storefrontItemAdded
 }
 
+func indexItem(lastInsertedItemID int64, item *store.Item, itemClient kudakiredisearch.RedisClient) {
+	sanitizedUUID := kudakiredisearch.RedisearchText(item.Uuid).Sanitize()
+	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), itemClient.Name())
+	client.CreateIndex(itemClient.Schema())
+	doc := redisearch.NewDocument(sanitizedUUID, 1.0)
+	doc.Set("item_id", lastInsertedItemID)
+	doc.Set("item_uuid", sanitizedUUID)
+	doc.Set("item_name", item.Name)
+	doc.Set("item_amount", item.Amount)
+	doc.Set("item_unit", item.Unit)
+	doc.Set("item_price", item.Price)
+	doc.Set("item_description", item.Description)
+	doc.Set("item_photo", item.Photo)
+	doc.Set("item_rating", item.Rating)
+	err := client.IndexOptions(redisearch.DefaultIndexingOptions, doc)
+	if errorkit.ErrorHandled(err) {
+		log.Println("failed to index item")
+	} else {
+		log.Println("item indexed successfully ")
+	}
+}
+
 type StorefrontItemDeletion struct {
-	In  *events.DeleteStorefrontItemRequested
-	DBO DBOperation
+	In         *events.DeleteStorefrontItemRequested
+	DBO        DBOperation
+	ItemClient kudakiredisearch.RedisClient
 }
 
 func (sid *StorefrontItemDeletion) Delete() *events.StorefrontItemDeleted {
@@ -67,12 +102,21 @@ func (sid *StorefrontItemDeletion) Delete() *events.StorefrontItemDeleted {
 
 	storefrontItemDeletedEvent.Item = item
 
-	err = sid.DBO.Command("DELETE FROM items WHERE uuid = ?", item.Uuid)
+	_, err = sid.DBO.Command("DELETE FROM items WHERE uuid = ?", item.Uuid)
 	if errorkit.ErrorHandled(err) {
 		storefrontItemDeletedEvent.EventStatus.Errors = []string{err.Error()}
 		storefrontItemDeletedEvent.EventStatus.HttpCode = http.StatusInternalServerError
 	}
 	storefrontItemDeletedEvent.EventStatus.HttpCode = http.StatusOK
+
+	rsHost := redisearch.NewSingleHostPool(os.Getenv("REDISEARCH_SERVER"))
+	defer rsHost.Close()
+	rsConn := rsHost.Get()
+	defer rsConn.Close()
+
+	reply, err := rsConn.Do("FT.DEL", sid.ItemClient.Name(), kudakiredisearch.RedisearchText(item.Uuid).Sanitize, "DD")
+	errorkit.ErrorHandled(err)
+	log.Printf("delete item reply : %v", reply)
 
 	return &storefrontItemDeletedEvent
 }
@@ -151,8 +195,9 @@ func (sirr StorefrontItemsRetrieval) retrieveFromDB() (*store.Items, []*int64, e
 }
 
 type StorefrontItemUpdate struct {
-	In  *events.UpdateStorefrontItemRequested
-	DBO DBOperation
+	In         *events.UpdateStorefrontItemRequested
+	DBO        DBOperation
+	ItemClient kudakiredisearch.RedisClient
 }
 
 func (s StorefrontItemUpdate) checkItemOwnership(siu *events.StorefrontItemUpdated) bool {
@@ -174,7 +219,7 @@ func (s StorefrontItemUpdate) checkItemOwnership(siu *events.StorefrontItemUpdat
 }
 
 func (s StorefrontItemUpdate) updateItemInDB(siu *events.StorefrontItemUpdated) error {
-	commandErr := s.DBO.Command(
+	_, commandErr := s.DBO.Command(
 		"UPDATE items SET name=?,amount=?,unit=?,price=?,description=?,photo=? WHERE uuid=?;",
 		s.In.Item.Name,
 		s.In.Item.Amount,
@@ -195,6 +240,22 @@ func (s StorefrontItemUpdate) updateItemInDB(siu *events.StorefrontItemUpdated) 
 	return commandErr
 }
 
+func (s StorefrontItemUpdate) reindexItem() {
+	rsClient := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), s.ItemClient.Name())
+	rsClient.CreateIndex(s.ItemClient.Schema())
+
+	updateItemDoc := redisearch.NewDocument(kudakiredisearch.RedisearchText(s.In.Item.Uuid).Sanitize(), 1.0)
+	updateItemDoc.Set("item_name", s.In.Item.Name)
+	updateItemDoc.Set("item_amount", s.In.Item.Amount)
+	updateItemDoc.Set("item_unit", s.In.Item.Unit)
+	updateItemDoc.Set("item_price", s.In.Item.Price)
+	updateItemDoc.Set("item_description", s.In.Item.Description)
+	updateItemDoc.Set("item_photo", s.In.Item.Photo)
+
+	err := rsClient.IndexOptions(redisearch.DefaultIndexingOptions, updateItemDoc)
+	errorkit.ErrorHandled(err)
+}
+
 func (s StorefrontItemUpdate) Update() *events.StorefrontItemUpdated {
 
 	var siu events.StorefrontItemUpdated
@@ -209,6 +270,7 @@ func (s StorefrontItemUpdate) Update() *events.StorefrontItemUpdated {
 	if updateErr := s.updateItemInDB(&siu); updateErr != nil {
 		return &siu
 	}
+	s.reindexItem()
 
 	siu.Item = s.In.Item
 	siu.EventStatus.HttpCode = http.StatusOK

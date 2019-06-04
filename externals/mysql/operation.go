@@ -12,22 +12,22 @@ func NewDBOperation() DBOperation {
 	return DBOperation{}
 }
 
-func (dbo DBOperation) Command(stmt string, args ...interface{}) error {
+func (dbo DBOperation) Command(stmt string, args ...interface{}) (sql.Result, error) {
 	err := DB.Ping()
 	errorkit.ErrorHandled(err)
 
 	outStmt, err := DB.Prepare(stmt)
 	defer outStmt.Close()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = outStmt.Exec(args...)
+	result, err := outStmt.Exec(args...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return result, nil
 }
 
 func (dbo DBOperation) Query(stmt string, args ...interface{}) (*sql.Rows, error) {
