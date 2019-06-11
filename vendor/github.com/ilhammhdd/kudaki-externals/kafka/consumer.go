@@ -7,7 +7,6 @@ import (
 
 	"github.com/ilhammhdd/go-toolkit/errorkit"
 	"github.com/ilhammhdd/go-toolkit/safekit"
-
 	sarama "gopkg.in/Shopify/sarama.v1"
 )
 

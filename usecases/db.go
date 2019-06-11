@@ -1,8 +1,10 @@
 package usecases
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
-type DBOperation interface {
+type DBOperator interface {
 	Command(string, ...interface{}) (sql.Result, error)
 	Query(string, ...interface{}) (*sql.Rows, error)
 	QueryRow(string, ...interface{}) (*sql.Row, error)

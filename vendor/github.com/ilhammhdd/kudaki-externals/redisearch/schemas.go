@@ -1,4 +1,4 @@
-package kudakiredisearch
+package redisearch
 
 import (
 	"github.com/RediSearch/redisearch-go/redisearch"

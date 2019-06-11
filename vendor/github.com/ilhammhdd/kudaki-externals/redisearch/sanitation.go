@@ -1,4 +1,4 @@
-package kudakiredisearch
+package redisearch
 
 import "strings"
 

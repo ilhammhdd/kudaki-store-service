@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	sarama "gopkg.in/Shopify/sarama.v1"
+	"gopkg.in/Shopify/sarama.v1"
 )
 
 var ErrProtoUnmarshalType = errors.New("proto: unmarshal: wire type and go type doesn't match")

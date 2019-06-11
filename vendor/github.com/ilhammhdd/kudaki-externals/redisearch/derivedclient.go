@@ -1,4 +1,4 @@
-package kudakiredisearch
+package redisearch
 
 import "github.com/RediSearch/redisearch-go/redisearch"
 
@@ -33,7 +33,6 @@ func (dc DerivedClient) Schema() *redisearch.Schema {
 		// CartItemSchema
 		CombineSchemas([]*redisearch.Schema{Cart.Schema(), Item.Schema()}).
 			AddField(redisearch.NewTextField("cart_item_uuid")).
-			AddField(redisearch.NewSortableNumericField("cart_item_id")).
 			AddField(redisearch.NewSortableNumericField("cart_item_total_amount")).
 			AddField(redisearch.NewSortableNumericField("cart_item_total_price")),
 		// ItemStorefront
@@ -46,7 +45,6 @@ func (dc DerivedClient) Schema() *redisearch.Schema {
 		CombineSchemas([]*redisearch.Schema{Mountain.Schema(), RecomendedGear.Schema()}),
 		// MountainReview
 		Mountain.Schema().
-			AddField(redisearch.NewSortableNumericField("review_id")).
 			AddField(redisearch.NewTextField("review_uuid")).
 			AddField(redisearch.NewSortableNumericField("review_difficulty")).
 			AddField(redisearch.NewTextField("review_comment")),

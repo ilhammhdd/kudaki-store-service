@@ -4,8 +4,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ilhammhdd/kudaki-store-service/externals/event_driven"
-	"github.com/ilhammhdd/kudaki-store-service/externals/mysql"
+	"github.com/ilhammhdd/kudaki-store-service/externals/eventdriven"
+
+	"github.com/ilhammhdd/kudaki-externals/mysql"
 
 	"github.com/ilhammhdd/go-toolkit/safekit"
 )
@@ -24,13 +25,9 @@ func init() {
 func main() {
 	wp := safekit.NewWorkerPool()
 
-	wp.Work <- event_driven.AddStorefrontItem
-	wp.Work <- event_driven.DeleteStorefrontItem
-	wp.Job <- new(event_driven.StorefrontItemsRetrieval)
-	wp.Job <- new(event_driven.StorefrontItemUpdate)
-	wp.Job <- new(event_driven.ItemsRetrieval)
-	wp.Job <- new(event_driven.ItemRetrieval)
-	wp.Job <- new(event_driven.ItemsSearch)
+	wp.Worker <- new(eventdriven.AddStorefrontItem)
+	wp.Worker <- new(eventdriven.UpdateStorefrontItem)
+	wp.Worker <- new(eventdriven.DeleteStorefrontItem)
 
 	wp.PoolWG.Wait()
 }
