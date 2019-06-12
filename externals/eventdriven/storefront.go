@@ -1,6 +1,7 @@
 package eventdriven
 
 import (
+	"log"
 	"os"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
@@ -123,8 +124,60 @@ func (usi *UpdateStorefrontItem) Work() interface{} {
 	ede.handle()
 	return nil
 }
-func (usi *UpdateStorefrontItem) ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message) {
 
+func (usi *UpdateStorefrontItem) ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message) {
+	out := outEvent.(*events.StorefrontItemUpdated)
+
+	usi.updateStorefront(out.Storefront)
+	usi.reIndexStorefront(out.Storefront)
+	usi.updateItem(out.Item)
+	usi.reIndexItem(out.Item)
+}
+
+func (usi *UpdateStorefrontItem) updateStorefront(updatedStorefront *store.Storefront) {
+	dbo := mysql.NewDBOperation()
+	_, err := dbo.Command("UPDATE storefronts SET total_item=? WHERE uuid=?;", updatedStorefront.TotalItem, updatedStorefront.Uuid)
+	errorkit.ErrorHandled(err)
+}
+
+func (usi *UpdateStorefrontItem) reIndexStorefront(updatedStorefront *store.Storefront) {
+	log.Println(updatedStorefront)
+	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Storefront.Name())
+	client.CreateIndex(kudakiredisearch.Storefront.Schema())
+
+	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(updatedStorefront.Uuid).Sanitize(), 1.0)
+	doc.Set("storefront_total_item", updatedStorefront.TotalItem)
+
+	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
+	errorkit.ErrorHandled(err)
+}
+
+func (usi *UpdateStorefrontItem) updateItem(updatedItem *store.Item) {
+	dbo := mysql.NewDBOperation()
+	_, err := dbo.Command("UPDATE items SET name=?,amount=?,unit=?,price=?,description=?,photo=? WHERE uuid=?;",
+		updatedItem.Name,
+		updatedItem.Amount,
+		updatedItem.Unit,
+		updatedItem.Price,
+		updatedItem.Description,
+		updatedItem.Photo,
+		updatedItem.Uuid)
+	errorkit.ErrorHandled(err)
+}
+
+func (usi *UpdateStorefrontItem) reIndexItem(updatedItem *store.Item) {
+	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Item.Name())
+	client.CreateIndex(kudakiredisearch.Item.Schema())
+
+	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(updatedItem.Uuid).Sanitize(), 1.0)
+	doc.Set("item_name", updatedItem.Name)
+	doc.Set("item_amount", updatedItem.Amount)
+	doc.Set("item_unit", updatedItem.Unit)
+	doc.Set("item_price", updatedItem.Price)
+	doc.Set("item_photo", updatedItem.Photo)
+
+	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
+	errorkit.ErrorHandled(err)
 }
 
 type DeleteStorefrontItem struct{}
