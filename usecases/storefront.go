@@ -25,8 +25,8 @@ func (asi *AddStorefrontItem) Handle(in proto.Message) (out proto.Message) {
 
 	usr := asi.getUserFromKudakiToken(inEvent.KudakiToken)
 	newItem := asi.initItem(inEvent)
-	storefront, ok := asi.storefrontExists(usr)
-	if ok {
+	if storefront, ok := asi.storefrontExists(usr); ok {
+		storefront.TotalItem = storefront.TotalItem + newItem.Amount
 		outEvent.Storefront = storefront
 		newItem.Storefront = storefront
 	}

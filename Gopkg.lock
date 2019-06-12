@@ -118,7 +118,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:75451f13d227859cc76aea125f59697e153fec744b2fbf7457b03f1b7a18ebf7"
+  digest = "1:670472126d2d3cb2db6a0467b3e3b692e006d0737cbdb486e0b609774edfa6bb"
   name = "github.com/ilhammhdd/kudaki-externals"
   packages = [
     "kafka",
@@ -126,7 +126,7 @@
     "redisearch",
   ]
   pruneopts = "UT"
-  revision = "a6330f849bc8542aff542e0f2a0f1026ceafaac0"
+  revision = "09113d4c5e03b83a64bc50bb81e84fc438e55e6b"
 
 [[projects]]
   digest = "1:259f9b7645983a7a823318d78aa96dec68af8891f706493ac1ec04d819cb977c"

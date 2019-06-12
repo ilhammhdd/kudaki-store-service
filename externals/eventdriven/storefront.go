@@ -38,15 +38,13 @@ func (asi *AddStorefrontItem) ExecutePostUsecase(inEvent proto.Message, outEvent
 	out := outEvent.(*events.StorefrontItemAdded)
 
 	if out.Storefront == nil {
-		newStorefront := asi.insertNewStorefront(out)
+		newStorefront := asi.initStorefront(out.User, out.Item)
 		out.Item.Storefront = newStorefront
 		out.Storefront = newStorefront
-	} else {
-		out.Storefront.TotalItem = out.Storefront.TotalItem + out.Item.Amount
 	}
 
-	asi.updateStorefront(out)
-	asi.reIndexStorefront(out.Storefront)
+	asi.upsertStorefront(out.Storefront)
+	asi.indexStorefront(out.Storefront)
 	asi.insertItem(out.Item)
 	asi.indexItem(out.Item)
 }
@@ -59,18 +57,10 @@ func (asi *AddStorefrontItem) initStorefront(usr *user.User, item *store.Item) *
 		Uuid:      uuid.New().String()}
 }
 
-func (asi *AddStorefrontItem) insertNewStorefront(out *events.StorefrontItemAdded) *store.Storefront {
+func (asi *AddStorefrontItem) upsertStorefront(storefront *store.Storefront) {
 	dbo := mysql.NewDBOperation()
 
-	newStorefront := asi.initStorefront(out.User, out.Item)
-	_, err := dbo.Command("INSERT INTO storefronts(uuid,user_uuid,total_item,rating) VALUES(?,?,?,?);", newStorefront.Uuid, newStorefront.User.Uuid, newStorefront.TotalItem, newStorefront.Rating)
-	errorkit.ErrorHandled(err)
-	return newStorefront
-}
-
-func (asi *AddStorefrontItem) updateStorefront(out *events.StorefrontItemAdded) {
-	dbo := mysql.NewDBOperation()
-	_, err := dbo.Command("UPDATE storefronts SET total_item=? WHERE uuid = ?;", out.Storefront.TotalItem, out.Storefront.Uuid)
+	_, err := dbo.Command("INSERT INTO storefronts(uuid,user_uuid,total_item,rating) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE total_item=?;", storefront.Uuid, storefront.User.Uuid, storefront.TotalItem, storefront.Rating, storefront.TotalItem)
 	errorkit.ErrorHandled(err)
 }
 
@@ -86,8 +76,10 @@ func (asi *AddStorefrontItem) indexItem(item *store.Item) {
 	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Item.Name())
 	client.CreateIndex(kudakiredisearch.Item.Schema())
 
-	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(item.Uuid).Sanitize(), 1.0)
-	doc.Set("item_uuid", item.Uuid)
+	sanitizedItemUUID := kudakiredisearch.RedisearchText(item.Uuid).Sanitize()
+	doc := redisearch.NewDocument(sanitizedItemUUID, 1.0)
+	doc.Set("item_uuid", sanitizedItemUUID)
+	doc.Set("storefront_uuid", kudakiredisearch.RedisearchText(item.Storefront.Uuid).Sanitize())
 	doc.Set("item_name", item.Name)
 	doc.Set("item_amount", item.Amount)
 	doc.Set("item_unit", item.Unit)
@@ -100,14 +92,18 @@ func (asi *AddStorefrontItem) indexItem(item *store.Item) {
 	errorkit.ErrorHandled(err)
 }
 
-func (asi *AddStorefrontItem) reIndexStorefront(storefront *store.Storefront) {
+func (asi *AddStorefrontItem) indexStorefront(storefront *store.Storefront) {
 	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Storefront.Name())
 	client.CreateIndex(kudakiredisearch.Storefront.Schema())
 
-	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(storefront.Uuid).Sanitize(), 1.0)
+	sanitizedStorefrontUUID := kudakiredisearch.RedisearchText(storefront.Uuid).Sanitize()
+	doc := redisearch.NewDocument(sanitizedStorefrontUUID, 1.0)
+	doc.Set("storefront_uuid", sanitizedStorefrontUUID)
+	doc.Set("user_uuid", kudakiredisearch.RedisearchText(storefront.User.Uuid).Sanitize())
 	doc.Set("storefront_total_item", storefront.TotalItem)
+	doc.Set("storefront_rating", storefront.Rating)
 
-	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
+	err := client.IndexOptions(redisearch.IndexingOptions{Replace: true}, doc)
 	errorkit.ErrorHandled(err)
 }
 

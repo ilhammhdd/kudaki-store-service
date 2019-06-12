@@ -44,10 +44,12 @@ func (c Client) Schema() *redisearch.Schema {
 		// Checkout
 		redisearch.NewSchema(redisearch.DefaultOptions).
 			AddField(redisearch.NewTextField("checkout_uuid")).
+			AddField(redisearch.NewTextField("cart_uuid")).
 			AddField(redisearch.NewSortableNumericField("checkout_issued_at")),
 		// Item
 		redisearch.NewSchema(redisearch.DefaultOptions).
 			AddField(redisearch.NewTextField("item_uuid")).
+			AddField(redisearch.NewTextField("storefront_uuid")).
 			AddField(redisearch.NewTextField("item_name")).
 			AddField(redisearch.NewSortableNumericField("item_amount")).
 			AddField(redisearch.NewTextField("item_unit")).
@@ -58,6 +60,7 @@ func (c Client) Schema() *redisearch.Schema {
 		// Storefront
 		redisearch.NewSchema(redisearch.DefaultOptions).
 			AddField(redisearch.NewTextField("storefront_uuid")).
+			AddField(redisearch.NewTextField("user_uuid")).
 			AddField(redisearch.NewSortableNumericField("storefront_total_item")).
 			AddField(redisearch.NewSortableNumericField("storefront_rating")),
 		// User
@@ -72,6 +75,7 @@ func (c Client) Schema() *redisearch.Schema {
 		// Profile
 		redisearch.NewSchema(redisearch.DefaultOptions).
 			AddField(redisearch.NewTextField("profile_uuid")).
+			AddField(redisearch.NewTextField("user_uuid")).
 			AddField(redisearch.NewTextField("profile_full_name")).
 			AddField(redisearch.NewTextField("profile_photo")).
 			AddField(redisearch.NewSortableNumericField("profile_reputation")),
@@ -87,6 +91,7 @@ func (c Client) Schema() *redisearch.Schema {
 		// RecomendedGears
 		redisearch.NewSchema(redisearch.DefaultOptions).
 			AddField(redisearch.NewTextField("recomended_gear_uuid")).
+			AddField(redisearch.NewTextField("mountain_uuid")).
 			AddField(redisearch.NewTextField("recomended_gear_photo")).
 			AddField(redisearch.NewTextField("recomended_gear_name")).
 			AddField(redisearch.NewSortableNumericField("recomended_gear_total")).
