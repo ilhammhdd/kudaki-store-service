@@ -17,6 +17,56 @@ import (
 	"github.com/ilhammhdd/kudaki-entities/events"
 )
 
+func IntendedItemExists(dbo DBOperator, storefront *store.Storefront, itemUUID string) (*store.Item, bool) {
+	row, err := dbo.QueryRow("SELECT name,amount,unit,price,description,photo,rating FROM items WHERE storefront_uuid=? AND uuid=?;", storefront.Uuid, itemUUID)
+	errorkit.ErrorHandled(err)
+
+	var intendedItem store.Item
+	if row.Scan(
+		&intendedItem.Name,
+		&intendedItem.Amount,
+		&intendedItem.Unit,
+		&intendedItem.Price,
+		&intendedItem.Description,
+		&intendedItem.Photo,
+		&intendedItem.Rating) == sql.ErrNoRows {
+		return nil, false
+	}
+	intendedItem.Storefront = storefront
+	intendedItem.Uuid = itemUUID
+
+	return &intendedItem, true
+}
+
+func StorefrontExists(usr *user.User, dbo DBOperator) (*store.Storefront, bool) {
+	row, err := dbo.QueryRow("SELECT uuid,total_item,rating FROM storefronts WHERE user_uuid=?;", usr.Uuid)
+	errorkit.ErrorHandled(err)
+
+	var storefront store.Storefront
+	if row.Scan(&storefront.Uuid, &storefront.TotalItem, &storefront.Rating) == sql.ErrNoRows {
+		return nil, false
+	}
+	storefront.User = usr
+
+	return &storefront, true
+}
+
+func GetUserFromKudakiToken(kudakiToken string) *user.User {
+	jwt, err := jwtkit.GetJWT(jwtkit.JWTString(kudakiToken))
+	errorkit.ErrorHandled(err)
+
+	userClaim := jwt.Payload.Claims["user"].(map[string]interface{})
+	usr := &user.User{
+		AccountType: user.AccountType(user.AccountType_value[userClaim["account_type"].(string)]),
+		Email:       userClaim["email"].(string),
+		PhoneNumber: userClaim["phone_number"].(string),
+		Role:        user.Role(user.Role_value[userClaim["role"].(string)]),
+		Uuid:        userClaim["uuid"].(string),
+	}
+
+	return usr
+}
+
 type AddStorefrontItem struct {
 	DBO DBOperator
 }
@@ -24,9 +74,9 @@ type AddStorefrontItem struct {
 func (asi *AddStorefrontItem) Handle(in proto.Message) (out proto.Message) {
 	inEvent, outEvent := asi.initInOutEvent(in)
 
-	usr := asi.getUserFromKudakiToken(inEvent.KudakiToken)
+	usr := GetUserFromKudakiToken(inEvent.KudakiToken)
 	newItem := asi.initItem(inEvent)
-	if storefront, ok := asi.storefrontExists(usr); ok {
+	if storefront, ok := StorefrontExists(usr, asi.DBO); ok {
 		storefront.TotalItem = storefront.TotalItem + newItem.Amount
 		outEvent.Storefront = storefront
 		newItem.Storefront = storefront
@@ -50,34 +100,6 @@ func (asi *AddStorefrontItem) initInOutEvent(in proto.Message) (inEvent *events.
 	return
 }
 
-func (asi *AddStorefrontItem) getUserFromKudakiToken(kudakiToken string) *user.User {
-	jwt, err := jwtkit.GetJWT(jwtkit.JWTString(kudakiToken))
-	errorkit.ErrorHandled(err)
-
-	userClaim := jwt.Payload.Claims["user"].(map[string]interface{})
-	usr := &user.User{
-		AccountType: user.AccountType(user.AccountType_value[userClaim["account_type"].(string)]),
-		Email:       userClaim["email"].(string),
-		PhoneNumber: userClaim["phone_number"].(string),
-		Role:        user.Role(user.Role_value[userClaim["role"].(string)]),
-		Uuid:        userClaim["uuid"].(string),
-	}
-
-	return usr
-}
-
-func (asi *AddStorefrontItem) storefrontExists(usr *user.User) (*store.Storefront, bool) {
-	row, err := asi.DBO.QueryRow("SELECT uuid,total_item,rating FROM storefronts WHERE user_uuid = ?;", usr.Uuid)
-	errorkit.ErrorHandled(err)
-
-	var storefront store.Storefront
-	if row.Scan(&storefront.Uuid, &storefront.TotalItem, &storefront.Rating) == sql.ErrNoRows {
-		return nil, false
-	}
-	storefront.User = usr
-	return &storefront, true
-}
-
 func (asi *AddStorefrontItem) initItem(inEvent *events.AddStorefrontItemRequested) *store.Item {
 	item := new(store.Item)
 	item.Amount = inEvent.Amount
@@ -99,15 +121,15 @@ type UpdateStorefrontItem struct {
 func (usi *UpdateStorefrontItem) Handle(in proto.Message) (out proto.Message) {
 	inEvent, outEvent := usi.initInOutEvent(in)
 
-	usr := usi.getUserFromKudakiToken(inEvent.KudakiToken)
-	existedStorefront, ok := usi.storefrontExists(usr)
+	usr := GetUserFromKudakiToken(inEvent.KudakiToken)
+	existedStorefront, ok := StorefrontExists(usr, usi.DBO)
 	if !ok {
 		outEvent.EventStatus.HttpCode = http.StatusNotFound
 		outEvent.EventStatus.Errors = []string{"storefront not exists"}
 		return outEvent
 	}
 
-	intendedItem, ok := usi.intendedItemExists(existedStorefront, inEvent.Uuid)
+	intendedItem, ok := IntendedItemExists(usi.DBO, existedStorefront, inEvent.Uuid)
 	if !ok {
 		outEvent.EventStatus.HttpCode = http.StatusNotFound
 		outEvent.EventStatus.Errors = []string{"the intended item for update doesn't exists"}
@@ -135,56 +157,6 @@ func (usi *UpdateStorefrontItem) initInOutEvent(in proto.Message) (inEvent *even
 	outEvent.UpdateStorefrontItemRequested = inEvent
 
 	return
-}
-
-func (usi *UpdateStorefrontItem) getUserFromKudakiToken(kudakiToken string) *user.User {
-	jwt, err := jwtkit.GetJWT(jwtkit.JWTString(kudakiToken))
-	errorkit.ErrorHandled(err)
-
-	userClaim := jwt.Payload.Claims["user"].(map[string]interface{})
-	usr := &user.User{
-		AccountType: user.AccountType(user.AccountType_value[userClaim["account_type"].(string)]),
-		Email:       userClaim["email"].(string),
-		PhoneNumber: userClaim["phone_number"].(string),
-		Role:        user.Role(user.Role_value[userClaim["role"].(string)]),
-		Uuid:        userClaim["uuid"].(string),
-	}
-
-	return usr
-}
-
-func (usi *UpdateStorefrontItem) storefrontExists(usr *user.User) (*store.Storefront, bool) {
-	row, err := usi.DBO.QueryRow("SELECT uuid,total_item,rating FROM storefronts WHERE user_uuid=?;", usr.Uuid)
-	errorkit.ErrorHandled(err)
-
-	var storefront store.Storefront
-	if row.Scan(&storefront.Uuid, &storefront.TotalItem, &storefront.Rating) == sql.ErrNoRows {
-		return nil, false
-	}
-	storefront.User = usr
-
-	return &storefront, true
-}
-
-func (usi *UpdateStorefrontItem) intendedItemExists(storefront *store.Storefront, itemUUID string) (*store.Item, bool) {
-	row, err := usi.DBO.QueryRow("SELECT name,amount,unit,price,description,photo,rating FROM items WHERE storefront_uuid=? AND uuid=?;", storefront.Uuid, itemUUID)
-	errorkit.ErrorHandled(err)
-
-	var intendedItem store.Item
-	if row.Scan(
-		&intendedItem.Name,
-		&intendedItem.Amount,
-		&intendedItem.Unit,
-		&intendedItem.Price,
-		&intendedItem.Description,
-		&intendedItem.Photo,
-		&intendedItem.Rating) == sql.ErrNoRows {
-		return nil, false
-	}
-	intendedItem.Storefront = storefront
-	intendedItem.Uuid = itemUUID
-
-	return &intendedItem, true
 }
 
 func (usi *UpdateStorefrontItem) initUpdatedItem(inEvent *events.UpdateStorefrontItemRequested, intendedItem *store.Item, existedStorefront *store.Storefront) *store.Item {
@@ -218,11 +190,42 @@ type DeleteStorefrontItem struct {
 }
 
 func (dsi *DeleteStorefrontItem) Handle(in proto.Message) (out proto.Message) {
+	inEvent, outEvent := dsi.initInOutEvent(in)
 
-	return nil
+	usr := GetUserFromKudakiToken(inEvent.KudakiToken)
+
+	existedStorefront, ok := StorefrontExists(usr, dsi.DBO)
+	if !ok {
+		outEvent.EventStatus.HttpCode = http.StatusNotFound
+		outEvent.EventStatus.Errors = []string{"storefront for the given user not found"}
+		return outEvent
+	}
+
+	existedItem, ok := IntendedItemExists(dsi.DBO, existedStorefront, inEvent.ItemUuid)
+	if !ok {
+		outEvent.EventStatus.HttpCode = http.StatusNotFound
+		outEvent.EventStatus.Errors = []string{"item with the given uuid doesn't exists"}
+		return outEvent
+	}
+
+	outEvent.Item = existedItem
+	outEvent.Item.Storefront = existedStorefront
+	outEvent.Storefront = existedStorefront
+	outEvent.Storefront.TotalItem -= outEvent.Item.Amount
+	outEvent.User = usr
+	outEvent.EventStatus.HttpCode = http.StatusOK
+
+	return outEvent
 }
 
 func (dsi *DeleteStorefrontItem) initInOutEvent(in proto.Message) (inEvent *events.DeleteStorefrontItemRequested, outEvent *events.StorefrontItemDeleted) {
+	inEvent = in.(*events.DeleteStorefrontItemRequested)
 
-	return nil, nil
+	outEvent = new(events.StorefrontItemDeleted)
+	outEvent.DeleteStorefrontItemRequested = inEvent
+	outEvent.EventStatus = new(events.Status)
+	outEvent.EventStatus.Timestamp = ptypes.TimestampNow()
+	outEvent.Uid = inEvent.Uid
+
+	return
 }

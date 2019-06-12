@@ -2,6 +2,7 @@ package eventdriven
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
@@ -37,6 +38,10 @@ func (asi *AddStorefrontItem) Work() interface{} {
 
 func (asi *AddStorefrontItem) ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message) {
 	out := outEvent.(*events.StorefrontItemAdded)
+
+	if out.EventStatus.HttpCode != http.StatusOK {
+		return
+	}
 
 	if out.Storefront == nil {
 		newStorefront := asi.initStorefront(out.User, out.Item)
@@ -128,6 +133,10 @@ func (usi *UpdateStorefrontItem) Work() interface{} {
 func (usi *UpdateStorefrontItem) ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message) {
 	out := outEvent.(*events.StorefrontItemUpdated)
 
+	if out.EventStatus.HttpCode != http.StatusOK {
+		return
+	}
+
 	usi.updateStorefront(out.Storefront)
 	usi.reIndexStorefront(out.Storefront)
 	usi.updateItem(out.Item)
@@ -198,5 +207,46 @@ func (dsi *DeleteStorefrontItem) Work() interface{} {
 }
 
 func (dsi *DeleteStorefrontItem) ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message) {
+	out := outEvent.(*events.StorefrontItemDeleted)
 
+	if out.EventStatus.HttpCode != http.StatusOK {
+		return
+	}
+
+	dsi.deleteItemFromDB(out.Item, out.Storefront)
+	dsi.deleteItemDoc(out.Item)
+	dsi.updateStorefront(out.Storefront)
+	dsi.reIndexStorefront(out.Storefront)
+}
+
+func (dsi *DeleteStorefrontItem) deleteItemFromDB(item *store.Item, storefront *store.Storefront) {
+	dbo := mysql.NewDBOperation()
+	_, err := dbo.Command("DELETE FROM items WHERE uuid=? AND storefront_uuid=?;", item.Uuid, storefront.Uuid)
+	errorkit.ErrorHandled(err)
+}
+
+func (dsi *DeleteStorefrontItem) deleteItemDoc(item *store.Item) {
+	host := redisearch.NewSingleHostPool(os.Getenv("REDISEARCH_SERVER"))
+	defer host.Close()
+	conn := host.Get()
+	defer conn.Close()
+	_, err := conn.Do("FT.DEL", kudakiredisearch.Item.Name(), kudakiredisearch.RedisearchText(item.Uuid).Sanitize(), "DD")
+	errorkit.ErrorHandled(err)
+}
+
+func (dsi *DeleteStorefrontItem) updateStorefront(storefront *store.Storefront) {
+	dbo := mysql.NewDBOperation()
+	_, err := dbo.Command("UPDATE storefronts SET total_item=? WHERE uuid=?;", storefront.TotalItem, storefront.Uuid)
+	errorkit.ErrorHandled(err)
+}
+
+func (dsi *DeleteStorefrontItem) reIndexStorefront(storefront *store.Storefront) {
+	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Storefront.Name())
+	client.CreateIndex(kudakiredisearch.Storefront.Schema())
+
+	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(storefront.Uuid).Sanitize(), 1.0)
+	doc.Set("storefront_total_item", storefront.TotalItem)
+
+	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
+	errorkit.ErrorHandled(err)
 }
