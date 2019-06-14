@@ -23,6 +23,10 @@ type PostUsecaseExecutor interface {
 	ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message)
 }
 
+type PostDownstreamUsecaseExecutor interface {
+	ExecutePostDownstreamUsecase(inEvent proto.Message, uscaseStat *usecases.UsecaseHandlerStatus)
+}
+
 type EventDrivenExternal struct {
 	inTopics            []string
 	eventName           string
@@ -68,6 +72,47 @@ func (edc *EventDrivenExternal) handle() {
 
 						outKey, outMsg := edc.eventDrivenAdapter.ParseOut(outEvent)
 						edc.produce(outKey, outMsg)
+					}
+				case errs := <-consMember.Errs:
+					errorkit.ErrorHandled(errs)
+				case <-signals:
+					break ConsLoop
+				}
+			}
+		})
+	}
+}
+
+type EventDrivenDownstreamExternal struct {
+	inTopics            []string
+	eventName           string
+	eventDrivenAdapter  adapters.EventDrivenDownstreamAdapter
+	eventDrivenUsecase  usecases.EventDrivenDownstreamUsecase
+	PostUsecaseExecutor PostDownstreamUsecaseExecutor
+}
+
+func (edde *EventDrivenDownstreamExternal) handle() {
+	groupID := uuid.New().String()
+	cl := adapters.ConsumerLog{EventName: edde.eventName}
+
+	for i := 0; i < TOTAL_CONSUMER_MEMBER; i++ {
+		consMember := kafka.NewConsumptionMember(groupID, edde.inTopics, sarama.OffsetNewest, edde.eventName, i)
+		signals := make(chan os.Signal)
+		signal.Notify(signals)
+
+		safekit.Do(func() {
+			defer close(consMember.Close)
+		ConsLoop:
+			for {
+				select {
+				case msg := <-consMember.Messages:
+					if inEvent, ok := edde.eventDrivenAdapter.ParseIn(msg.Value); ok {
+						cl.Log(msg.Partition, msg.Offset, string(msg.Key))
+						stat := edde.eventDrivenUsecase.Handle(inEvent)
+
+						if edde.PostUsecaseExecutor != nil {
+							edde.PostUsecaseExecutor.ExecutePostDownstreamUsecase(inEvent, stat)
+						}
 					}
 				case errs := <-consMember.Errs:
 					errorkit.ErrorHandled(errs)

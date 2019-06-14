@@ -28,6 +28,7 @@ func main() {
 	wp.Worker <- new(eventdriven.AddStorefrontItem)
 	wp.Worker <- new(eventdriven.UpdateStorefrontItem)
 	wp.Worker <- new(eventdriven.DeleteStorefrontItem)
+	wp.Worker <- new(eventdriven.CartItemAdded)
 
 	wp.PoolWG.Wait()
 }

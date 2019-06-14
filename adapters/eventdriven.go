@@ -19,6 +19,6 @@ type EventDrivenAdapter interface {
 	ParseOut(out proto.Message) (key string, message []byte)
 }
 
-type EventDrivenSinkAdapter interface {
+type EventDrivenDownstreamAdapter interface {
 	ParseIn(msg []byte) (proto.Message, bool)
 }

@@ -15,13 +15,13 @@ schema:
     run:
       status: true
   args:
-    - -- KAFKA_BROKERS 178.62.107.160:29092
-    - -- DB_PATH tcp(178.62.107.160:3306)
+    - -- KAFKA_BROKERS 178.62.107.160:29093
+    - -- DB_PATH tcp(178.62.107.160:3307)
     - -- DB_USERNAME root
     - -- DB_PASSWORD mysqlrocks
     - -- DB_NAME kudaki_store
     - -- KAFKA_VERSION 2.1.1
-    - -- REDISEARCH_SERVER 178.62.107.160:6379
+    - -- REDISEARCH_SERVER 178.62.107.160:6380
   watcher:
     extensions:
     - go
