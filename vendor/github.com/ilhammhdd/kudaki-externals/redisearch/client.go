@@ -38,6 +38,7 @@ func (c Client) Schema() *redisearch.Schema {
 		// Cart
 		redisearch.NewSchema(redisearch.DefaultOptions).
 			AddField(redisearch.NewTextField("cart_uuid")).
+			AddField(redisearch.NewTextField("user_uuid")).
 			AddField(redisearch.NewSortableNumericField("cart_total_price")).
 			AddField(redisearch.NewSortableNumericField("cart_total_items")).
 			AddField(redisearch.NewNumericField("cart_open")),

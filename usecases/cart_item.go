@@ -30,8 +30,8 @@ func (cia *CartItemAdded) Handle(in proto.Message) *UsecaseHandlerStatus {
 		stat.Ok = false
 		return stat
 	}
-	(*inEvent.CartItem.Item).Amount -= int32(inEvent.CartItem.TotalAmount)
-	(*inEvent.CartItem.Item.Storefront).TotalItem -= int32(inEvent.CartItem.TotalAmount)
+	(*inEvent.CartItem.Item).Amount -= int32(inEvent.AddCartItemRequested.ItemAmount)
+	(*inEvent.CartItem.Item.Storefront).TotalItem -= int32(inEvent.AddCartItemRequested.ItemAmount)
 
 	stat.Ok = true
 	return stat

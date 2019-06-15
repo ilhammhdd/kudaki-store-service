@@ -1,7 +1,6 @@
 package eventdriven
 
 import (
-	"log"
 	"os"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
@@ -23,8 +22,6 @@ func (cia *CartItemAdded) ExecutePostDownstreamUsecase(inEvent proto.Message, us
 	}
 
 	in := inEvent.(*events.CartItemAdded)
-	log.Printf("item after added to cart : amount = %d", in.CartItem.Item.Amount)
-	log.Printf("storefront after item added to cart : total item = %d", in.CartItem.Item.Storefront.TotalItem)
 
 	cia.updateItem(in.CartItem.Item)
 	cia.reIndexItem(in.CartItem.Item)

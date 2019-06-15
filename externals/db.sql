@@ -4,14 +4,14 @@ GRANT ALL PRIVILEGES ON kudaki_store.* TO 'kudaki_user' @'localhost' WITH GRANT 
 USE kudaki_store;
 CREATE TABLE IF NOT EXISTS storefronts(
   `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-  `uuid` VARCHAR(64) UNIQUE,
+  `uuid` VARCHAR(64) NOT NULL UNIQUE,
   `user_uuid` VARCHAR(64),
   `total_item` INT(20),
   `rating` DECIMAL(4, 3)
 );
 CREATE TABLE IF NOT EXISTS items(
   `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-  `uuid` VARCHAR(64) UNIQUE,
+  `uuid` VARCHAR(64) NOT NULL UNIQUE,
   `storefront_uuid` VARCHAR(64),
   `name` VARCHAR(255),
   `amount` INT(20),
