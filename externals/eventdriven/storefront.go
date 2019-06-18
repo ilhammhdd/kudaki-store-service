@@ -82,10 +82,14 @@ func (asi *AddStorefrontItem) indexItem(item *store.Item) {
 	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Item.Name())
 	client.CreateIndex(kudakiredisearch.Item.Schema())
 
-	sanitizedItemUUID := kudakiredisearch.RedisearchText(item.Uuid).Sanitize()
+	sanitizer := new(kudakiredisearch.RedisearchText)
+
+	sanitizer.Set(item.Uuid)
+	sanitizedItemUUID := sanitizer.Sanitize()
 	doc := redisearch.NewDocument(sanitizedItemUUID, 1.0)
 	doc.Set("item_uuid", sanitizedItemUUID)
-	doc.Set("storefront_uuid", kudakiredisearch.RedisearchText(item.Storefront.Uuid).Sanitize())
+	sanitizer.Set(item.Storefront.Uuid)
+	doc.Set("storefront_uuid", sanitizer.Sanitize())
 	doc.Set("item_name", item.Name)
 	doc.Set("item_amount", item.Amount)
 	doc.Set("item_unit", item.Unit)
@@ -102,10 +106,15 @@ func (asi *AddStorefrontItem) indexStorefront(storefront *store.Storefront) {
 	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Storefront.Name())
 	client.CreateIndex(kudakiredisearch.Storefront.Schema())
 
-	sanitizedStorefrontUUID := kudakiredisearch.RedisearchText(storefront.Uuid).Sanitize()
+	sanitizer := new(kudakiredisearch.RedisearchText)
+
+	sanitizer.Set(storefront.Uuid)
+	sanitizedStorefrontUUID := sanitizer.Sanitize()
 	doc := redisearch.NewDocument(sanitizedStorefrontUUID, 1.0)
 	doc.Set("storefront_uuid", sanitizedStorefrontUUID)
-	doc.Set("user_uuid", kudakiredisearch.RedisearchText(storefront.User.Uuid).Sanitize())
+
+	sanitizer.Set(storefront.User.Uuid)
+	doc.Set("user_uuid", sanitizer.Sanitize())
 	doc.Set("storefront_total_item", storefront.TotalItem)
 	doc.Set("storefront_rating", storefront.Rating)
 
@@ -154,7 +163,10 @@ func (usi *UpdateStorefrontItem) reIndexStorefront(updatedStorefront *store.Stor
 	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Storefront.Name())
 	client.CreateIndex(kudakiredisearch.Storefront.Schema())
 
-	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(updatedStorefront.Uuid).Sanitize(), 1.0)
+	sanitizer := new(kudakiredisearch.RedisearchText)
+
+	sanitizer.Set(updatedStorefront.Uuid)
+	doc := redisearch.NewDocument(sanitizer.Sanitize(), 1.0)
 	doc.Set("storefront_total_item", updatedStorefront.TotalItem)
 
 	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
@@ -178,7 +190,10 @@ func (usi *UpdateStorefrontItem) reIndexItem(updatedItem *store.Item) {
 	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Item.Name())
 	client.CreateIndex(kudakiredisearch.Item.Schema())
 
-	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(updatedItem.Uuid).Sanitize(), 1.0)
+	sanitizer := new(kudakiredisearch.RedisearchText)
+
+	sanitizer.Set(updatedItem.Uuid)
+	doc := redisearch.NewDocument(sanitizer.Sanitize(), 1.0)
 	doc.Set("item_name", updatedItem.Name)
 	doc.Set("item_amount", updatedItem.Amount)
 	doc.Set("item_unit", updatedItem.Unit)
@@ -230,7 +245,11 @@ func (dsi *DeleteStorefrontItem) deleteItemDoc(item *store.Item) {
 	defer host.Close()
 	conn := host.Get()
 	defer conn.Close()
-	_, err := conn.Do("FT.DEL", kudakiredisearch.Item.Name(), kudakiredisearch.RedisearchText(item.Uuid).Sanitize(), "DD")
+
+	sanitizer := new(kudakiredisearch.RedisearchText)
+
+	sanitizer.Set(item.Uuid)
+	_, err := conn.Do("FT.DEL", kudakiredisearch.Item.Name(), sanitizer.Sanitize(), "DD")
 	errorkit.ErrorHandled(err)
 }
 
@@ -244,7 +263,10 @@ func (dsi *DeleteStorefrontItem) reIndexStorefront(storefront *store.Storefront)
 	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Storefront.Name())
 	client.CreateIndex(kudakiredisearch.Storefront.Schema())
 
-	doc := redisearch.NewDocument(kudakiredisearch.RedisearchText(storefront.Uuid).Sanitize(), 1.0)
+	sanitizer := new(kudakiredisearch.RedisearchText)
+
+	sanitizer.Set(storefront.Uuid)
+	doc := redisearch.NewDocument(sanitizer.Sanitize(), 1.0)
 	doc.Set("storefront_total_item", storefront.TotalItem)
 
 	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)

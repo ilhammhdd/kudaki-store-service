@@ -19,3 +19,18 @@ func (cia *CartItemAdded) ParseIn(msg []byte) (proto.Message, bool) {
 	}
 	return nil, false
 }
+
+type CartItemDeleted struct {
+	Sanitizer Sanitizer
+}
+
+func (cid *CartItemDeleted) ParseIn(msg []byte) (proto.Message, bool) {
+	var inEvent events.CartItemDeleted
+
+	if proto.Unmarshal(msg, &inEvent) == nil {
+		if inEvent.EventStatus.HttpCode == http.StatusOK {
+			return &inEvent, true
+		}
+	}
+	return nil, false
+}

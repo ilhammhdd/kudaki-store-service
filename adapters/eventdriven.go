@@ -6,6 +6,12 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+type Sanitizer interface {
+	Set(string)
+	Sanitize() string
+	UnSanitize() string
+}
+
 type ConsumerLog struct {
 	EventName string
 }
