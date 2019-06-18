@@ -24,7 +24,7 @@ type PostUsecaseExecutor interface {
 }
 
 type PostDownstreamUsecaseExecutor interface {
-	ExecutePostDownstreamUsecase(inEvent proto.Message, uscaseStat *usecases.UsecaseHandlerStatus)
+	ExecutePostDownstreamUsecase(inEvent proto.Message, usecaseStat *usecases.UsecaseHandlerStatus)
 }
 
 type EventDrivenExternal struct {

@@ -149,3 +149,70 @@ func (cid *CartItemDeleted) reIndexStorefront(storefront *store.Storefront) {
 	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
 	errorkit.ErrorHandled(err)
 }
+
+type CartItemUpdated struct{}
+
+func (ciu *CartItemUpdated) Work() interface{} {
+	usecase := &usecases.CartItemUpdated{DBO: mysql.NewDBOperation()}
+	adapter := &adapters.CartItemUpdated{Sanitizer: new(kudakiredisearch.RedisearchText)}
+
+	edde := EventDrivenDownstreamExternal{
+		PostUsecaseExecutor: ciu,
+		eventDrivenAdapter:  adapter,
+		eventDrivenUsecase:  usecase,
+		eventName:           events.RentalTopic_CART_ITEM_UPDATED.String(),
+		inTopics:            []string{events.RentalTopic_CART_ITEM_UPDATED.String()}}
+
+	edde.handle()
+	return nil
+}
+
+func (ciu *CartItemUpdated) ExecutePostDownstreamUsecase(inEvent proto.Message, usecaseStat *usecases.UsecaseHandlerStatus) {
+	if !usecaseStat.Ok {
+		return
+	}
+
+	in := inEvent.(*events.CartItemUpdated)
+
+	ciu.updateItem(in.UpdatedCartItem.Item)
+	ciu.updateStorefront(in.UpdatedCartItem.Item.Storefront)
+	ciu.reIndexItem(in.UpdatedCartItem.Item)
+	ciu.reIndexStorefront(in.UpdatedCartItem.Item.Storefront)
+}
+
+func (ciu *CartItemUpdated) updateItem(item *store.Item) {
+	dbo := mysql.NewDBOperation()
+	_, err := dbo.Command("UPDATE items SET amount=? WHERE uuid=?;", item.Amount, item.Uuid)
+	errorkit.ErrorHandled(err)
+}
+
+func (ciu *CartItemUpdated) updateStorefront(storefront *store.Storefront) {
+	dbo := mysql.NewDBOperation()
+	_, err := dbo.Command("UPDATE storefronts SET total_item=? WHERE uuid=?;", storefront.TotalItem, storefront.Uuid)
+	errorkit.ErrorHandled(err)
+}
+
+func (ciu *CartItemUpdated) reIndexItem(item *store.Item) {
+	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Item.Name())
+	client.CreateIndex(kudakiredisearch.Item.Schema())
+
+	sanitizer := new(kudakiredisearch.RedisearchText)
+	sanitizer.Set(item.Uuid)
+	sanitized := sanitizer.Sanitize()
+	doc := redisearch.NewDocument(sanitized, 1.0)
+	doc.Set("item_amount", item.Amount)
+	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
+	errorkit.ErrorHandled(err)
+}
+
+func (ciu *CartItemUpdated) reIndexStorefront(storefront *store.Storefront) {
+	client := redisearch.NewClient(os.Getenv("REDISEARCH_SERVER"), kudakiredisearch.Storefront.Name())
+	client.CreateIndex(kudakiredisearch.Storefront.Schema())
+
+	sanitizer := new(kudakiredisearch.RedisearchText)
+	sanitizer.Set(storefront.Uuid)
+	doc := redisearch.NewDocument(sanitizer.Sanitize(), 1.0)
+	doc.Set("storefront_total_item", storefront.TotalItem)
+	err := client.IndexOptions(redisearch.IndexingOptions{Partial: true, Replace: true}, doc)
+	errorkit.ErrorHandled(err)
+}

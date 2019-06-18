@@ -32,6 +32,6 @@ func TestSanitizer(t *testing.T) {
 }
 
 func doSanitize(sn Sanitizer, t *testing.T) {
-	sn.Set("a3d8e979\\-bc68\\-4060\\-82e3\\-e74d2bb9ccc6")
-	t.Log(sn.Sanitize())
+	sn.Set("a3d8e979-bc68-4060-82e3-e74d2bb9ccc6")
+	t.Log(sn.UnSanitize())
 }

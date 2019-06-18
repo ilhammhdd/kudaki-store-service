@@ -34,3 +34,20 @@ func (cid *CartItemDeleted) ParseIn(msg []byte) (proto.Message, bool) {
 	}
 	return nil, false
 }
+
+type CartItemUpdated struct {
+	Sanitizer Sanitizer
+}
+
+func (ciu *CartItemUpdated) ParseIn(msg []byte) (proto.Message, bool) {
+	var inEvent events.CartItemUpdated
+
+	if proto.Unmarshal(msg, &inEvent) == nil {
+		if inEvent.EventStatus.HttpCode == http.StatusOK {
+			ciu.Sanitizer.Set(inEvent.InitialCartItem.Item.Uuid)
+			inEvent.InitialCartItem.Item.Uuid = ciu.Sanitizer.UnSanitize()
+			return &inEvent, true
+		}
+	}
+	return nil, false
+}
