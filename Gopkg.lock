@@ -103,49 +103,71 @@
   revision = "effb6d3db0fbaad3438a04cd1f70c98b3d27f134"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e357b73818844a57d757aea508d0237620934740e2737ec8f893cae533b289a0"
-  name = "github.com/ilhammhdd/kudaki-entities"
-  packages = [
-    "events",
-    "mountain",
-    "rental",
-    "store",
-    "user",
-  ]
-  pruneopts = "UT"
-  revision = "b60d10981a817f34d27b8354dc4ee69dd171951f"
-
-[[projects]]
-  branch = "master"
-  digest = "1:eef4f743659ca682837326170145b07dd1f20d7b97414c434b758d318e6ca899"
-  name = "github.com/ilhammhdd/kudaki-externals"
-  packages = [
-    "kafka",
-    "mysql",
-    "redisearch",
-  ]
-  pruneopts = "UT"
-  revision = "a87eb2daf8dc60b0d5f91fb3ad842c12eb4ad1b8"
-
-[[projects]]
-  digest = "1:259f9b7645983a7a823318d78aa96dec68af8891f706493ac1ec04d819cb977c"
+  digest = "1:f690a0a27cefae695fa9587aa3ed23652e593be1d98b35f8184d10bccec30444"
   name = "github.com/pierrec/lz4"
   packages = [
     ".",
     "internal/xxh32",
   ]
   pruneopts = "UT"
-  revision = "d705d4371bfccdf47f10e45584e896026c83616f"
-  version = "v2.2.3"
+  revision = "057d66e894a4e55853274a3bbbf7de02ba639e43"
+  version = "v2.2.4"
 
 [[projects]]
   branch = "master"
-  digest = "1:d38f81081a389f1466ec98192cf9115a82158854d6f01e1c23e2e7554b97db71"
+  digest = "1:267844804416a11470a2fbf68549b98959e22d77e0921e2349276958477f08a3"
   name = "github.com/rcrowley/go-metrics"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3113b8401b8a98917cde58f8bbd42a1b1c03b1fd"
+  revision = "9beb055b7962d16947a14e1cd718098a2431e20e"
+
+[[projects]]
+  branch = "master"
+  digest = "1:d31a812696686f0059241fa6c3b56d89ada56dddde4db1d5036de5c1084000c5"
+  name = "golang.org/x/net"
+  packages = [
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
+    "internal/timeseries",
+    "trace",
+  ]
+  pruneopts = "UT"
+  revision = "da137c7871d730100384dbcf36e6f8fa493aef5b"
+
+[[projects]]
+  branch = "master"
+  digest = "1:730ba27cd66db3b98ec8f51a6f20d45ec277d490cca36b1f54e31d3fcaf4840e"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
+
+[[projects]]
+  digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/language",
+    "internal/language/compact",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable",
+  ]
+  pruneopts = "UT"
+  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
+  version = "v0.3.2"
 
 [[projects]]
   digest = "1:c25289f43ac4a68d88b02245742347c94f1e108c534dda442188015ff80669b3"
@@ -154,6 +176,56 @@
   pruneopts = "UT"
   revision = "b2f4a3cf3c67576a2ee09e1fe62656a5086ce880"
   version = "v1.6.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:583a0c80f5e3a9343d33aea4aead1e1afcc0043db66fdf961ddd1fe8cd3a4faf"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  pruneopts = "UT"
+  revision = "710ae3a149df3775bfc2e9efb7f4fb97b186b233"
+
+[[projects]]
+  digest = "1:cf01ae0753310464677058b125fa31e74fd943781782ada503180ad784fc83d3"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
+    "codes",
+    "connectivity",
+    "credentials",
+    "credentials/internal",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/balancerload",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "serviceconfig",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = "UT"
+  revision = "1d89a3c832915b2314551c1d2a506874d62e53f7"
+  version = "v1.22.0"
 
 [[projects]]
   digest = "1:6981402aef27693f4b2ec619117abd263fde29f8c1dfac46eef0f35038d37513"
@@ -168,18 +240,17 @@
   analyzer-version = 1
   input-imports = [
     "github.com/RediSearch/redisearch-go/redisearch",
+    "github.com/go-sql-driver/mysql",
     "github.com/golang/protobuf/proto",
     "github.com/golang/protobuf/ptypes",
+    "github.com/golang/protobuf/ptypes/timestamp",
     "github.com/google/uuid",
     "github.com/ilhammhdd/go-toolkit/errorkit",
     "github.com/ilhammhdd/go-toolkit/jwtkit",
     "github.com/ilhammhdd/go-toolkit/safekit",
-    "github.com/ilhammhdd/kudaki-entities/events",
-    "github.com/ilhammhdd/kudaki-entities/store",
-    "github.com/ilhammhdd/kudaki-entities/user",
-    "github.com/ilhammhdd/kudaki-externals/kafka",
-    "github.com/ilhammhdd/kudaki-externals/mysql",
-    "github.com/ilhammhdd/kudaki-externals/redisearch",
+    "google.golang.org/grpc",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/status",
     "gopkg.in/Shopify/sarama.v1",
   ]
   solver-name = "gps-cdcl"

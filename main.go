@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ilhammhdd/kudaki-store-service/externals/eventdriven"
+	"github.com/ilhammhdd/kudaki-storefront-service/externals"
 
-	"github.com/ilhammhdd/kudaki-externals/mysql"
+	"github.com/ilhammhdd/kudaki-storefront-service/externals/mysql"
 
 	"github.com/ilhammhdd/go-toolkit/safekit"
 )
@@ -19,18 +19,17 @@ func init() {
 		}
 	}
 
-	mysql.OpenDB(os.Getenv("DB_PATH"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+	mysql.CommandDB = mysql.OpenDB(os.Getenv("DB_PATH"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+	mysql.QueryDB = mysql.OpenDB(os.Getenv("QUERY_DB_PATH"), os.Getenv("QUERY_DB_USERNAME"), os.Getenv("QUERY_DB_PASSWORD"), os.Getenv("QUERY_DB_NAME"))
 }
 
 func main() {
 	wp := safekit.NewWorkerPool()
 
-	wp.Worker <- new(eventdriven.AddStorefrontItem)
-	wp.Worker <- new(eventdriven.UpdateStorefrontItem)
-	wp.Worker <- new(eventdriven.DeleteStorefrontItem)
-	wp.Worker <- new(eventdriven.CartItemAdded)
-	wp.Worker <- new(eventdriven.CartItemDeleted)
-	wp.Worker <- new(eventdriven.CartItemUpdated)
+	wp.Worker <- new(externals.AddStorefrontItem)
+	wp.Worker <- new(externals.DeleteStorefrontItem)
+	wp.Worker <- new(externals.UpdateStorefrontItem)
+	wp.Worker <- new(externals.RetrieveStorefrontItems)
 
 	wp.PoolWG.Wait()
 }
