@@ -68,7 +68,7 @@ func (rsi *RetrieveStorefrontItems) retrieveStorefront(usr *user.User) *store.St
 		&createdAt) == sql.ErrNoRows {
 		return nil
 	}
-	createdAtProto, err := ptypes.TimestampProto(time.Unix(createdAt, createdAt*1e9))
+	createdAtProto, err := ptypes.TimestampProto(time.Unix(createdAt, 0))
 	errorkit.ErrorHandled(err)
 
 	storefront.CreatedAt = createdAtProto
@@ -91,7 +91,7 @@ func (rsi *RetrieveStorefrontItems) retrieveItems(inEvent *events.RetrieveStoref
 
 		rows.Scan(&item.Id, &item.Uuid, &item.Storefront.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &priceDuration, &item.Description, &item.Photo, &item.Rating, &itemDimension.Length, &itemDimension.Width, &itemDimension.Height, &item.Color, &unitOfMeasurement, &createdAt)
 
-		createdAtProto, err := ptypes.TimestampProto(time.Unix(createdAt, createdAt*1e9))
+		createdAtProto, err := ptypes.TimestampProto(time.Unix(createdAt, 0))
 		errorkit.ErrorHandled(err)
 		item.CreatedAt = createdAtProto
 

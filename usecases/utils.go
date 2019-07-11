@@ -64,7 +64,7 @@ func StorefrontExists(usr *user.User, dbo DBOperator) (*store.Storefront, bool) 
 		return nil, false
 	}
 
-	createdAtTimestamp, err := ptypes.TimestampProto(time.Unix(storefrontCreatedAt, storefrontCreatedAt*1e9))
+	createdAtTimestamp, err := ptypes.TimestampProto(time.Unix(storefrontCreatedAt, 0))
 	errorkit.ErrorHandled(err)
 	storefront.CreatedAt = createdAtTimestamp
 
