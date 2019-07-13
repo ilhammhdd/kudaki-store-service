@@ -17,8 +17,8 @@ schema:
   args:
     - -- KAFKA_BROKERS 178.62.107.160:29092
     - -- DB_PATH tcp(178.62.107.160:3306)
-    - -- DB_USERNAME root
-    - -- DB_PASSWORD mysqlrocks
+    - -- DB_USERNAME kudaki_store_repo
+    - -- DB_PASSWORD kudakistorereporocks
     - -- DB_NAME kudaki_store
     - -- QUERY_DB_PATH tcp(178.62.107.160:3307)
     - -- QUERY_DB_USERNAME root
