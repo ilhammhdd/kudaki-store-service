@@ -17,7 +17,7 @@ import (
 	"gopkg.in/Shopify/sarama.v1"
 )
 
-const TOTAL_CONSUMER_MEMBER = 5
+const TOTAL_CONSUMER_MEMBER = 3
 
 type PostUsecaseExecutor interface {
 	ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message)

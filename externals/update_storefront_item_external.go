@@ -23,21 +23,21 @@ func (usi *UpdateStorefrontItem) Work() interface{} {
 		eventDrivenUsecase:  usecase,
 		eventName:           events.StorefrontServiceCommandTopic_UPDATE_STOREFRONT_ITEM.String(),
 		inTopics:            []string{events.StorefrontServiceCommandTopic_UPDATE_STOREFRONT_ITEM.String()},
-		outTopic:            events.StorefrontServiceEventTopic_STOREFRONT_ITEM_UPDATED.String()}
+		outTopic:            events.StorefrontServiceEventTopic_STOREFRONT_ITEMS_UPDATED.String()}
 
 	ede.handle()
 	return nil
 }
 
 func (usi *UpdateStorefrontItem) ExecutePostUsecase(inEvent proto.Message, outEvent proto.Message) {
-	out := outEvent.(*events.StorefrontItemUpdated)
+	out := outEvent.(*events.StorefrontItemsUpdated)
 
 	if out.EventStatus.HttpCode != http.StatusOK {
 		return
 	}
 
-	usi.updateStorefront(out.ItemAfter.Storefront)
-	usi.updateItem(out.ItemAfter)
+	usi.updateStorefront(out.ItemsAfter[0].Storefront)
+	usi.updateItem(out.ItemsAfter[0])
 }
 
 func (usi *UpdateStorefrontItem) updateStorefront(updatedStorefront *store.Storefront) {

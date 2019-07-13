@@ -6,18 +6,17 @@ import (
 	"github.com/ilhammhdd/kudaki-storefront-service/usecases/events"
 )
 
-type UpdateStorefrontItem struct{}
+type CheckedOut struct{}
 
-func (usi *UpdateStorefrontItem) ParseIn(msg []byte) (proto.Message, bool) {
-	var inEvent events.UpdateStorefrontItem
-
+func (co *CheckedOut) ParseIn(msg []byte) (proto.Message, bool) {
+	var inEvent events.CheckedOut
 	if proto.Unmarshal(msg, &inEvent) == nil {
 		return &inEvent, true
 	}
 	return nil, false
 }
 
-func (usi *UpdateStorefrontItem) ParseOut(out proto.Message) (key string, message []byte) {
+func (co *CheckedOut) ParseOut(out proto.Message) (key string, message []byte) {
 	outEvent := out.(*events.StorefrontItemsUpdated)
 
 	outByte, err := proto.Marshal(outEvent)

@@ -31,12 +31,12 @@ func (usi *UpdateStorefrontItem) Handle(in proto.Message) (out proto.Message) {
 		return outEvent
 	}
 
-	outEvent.ItemBefore = intendedItem
-	outEvent.ItemBefore.Storefront = existedStorefront
+	outEvent.ItemsBefore = append(outEvent.ItemsBefore, intendedItem)
+	outEvent.ItemsBefore[0].Storefront = existedStorefront
 
-	outEvent.ItemAfter = usi.initUpdatedItem(inEvent, intendedItem, existedStorefront)
-	outEvent.ItemAfter.Storefront = existedStorefront
-	outEvent.ItemAfter.Storefront = usi.addOrSubtractTotalItem(inEvent.Amount, intendedItem.Amount, outEvent.ItemBefore.Storefront)
+	outEvent.ItemsAfter = append(outEvent.ItemsAfter, usi.initUpdatedItem(inEvent, intendedItem, existedStorefront))
+	outEvent.ItemsAfter[0].Storefront = existedStorefront
+	outEvent.ItemsAfter[0].Storefront = usi.addOrSubtractTotalItem(inEvent.Amount, intendedItem.Amount, outEvent.ItemsBefore[0].Storefront)
 
 	outEvent.EventStatus.HttpCode = http.StatusOK
 	outEvent.Requester = usr
@@ -46,10 +46,10 @@ func (usi *UpdateStorefrontItem) Handle(in proto.Message) (out proto.Message) {
 	return nil
 }
 
-func (usi *UpdateStorefrontItem) initInOutEvent(in proto.Message) (inEvent *events.UpdateStorefrontItem, outEvent *events.StorefrontItemUpdated) {
+func (usi *UpdateStorefrontItem) initInOutEvent(in proto.Message) (inEvent *events.UpdateStorefrontItem, outEvent *events.StorefrontItemsUpdated) {
 	inEvent = in.(*events.UpdateStorefrontItem)
 
-	outEvent = new(events.StorefrontItemUpdated)
+	outEvent = new(events.StorefrontItemsUpdated)
 	outEvent.EventStatus = new(events.Status)
 	outEvent.EventStatus.Timestamp = ptypes.TimestampNow()
 	outEvent.Uid = inEvent.Uid
