@@ -19,7 +19,7 @@ func (ciu *CartItemUpdated) Work() interface{} {
 	// 	eventName:           events.RentalTopic_CART_ITEM_UPDATED.String(),
 	// 	inTopics:            []string{events.RentalTopic_CART_ITEM_UPDATED.String()}}
 
-	// edde.handle()
+	// edde.handleSingleConsumer()
 	return nil
 }
 

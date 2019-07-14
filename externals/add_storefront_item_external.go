@@ -30,7 +30,7 @@ func (asi *AddStorefrontItem) Work() interface{} {
 		inTopics:            []string{events.StorefrontServiceCommandTopic_ADD_STOREFRONT_ITEM.String()},
 		outTopic:            events.StorefrontServiceEventTopic_STOREFRONT_ITEM_ADDED.String()}
 
-	ede.handle()
+	ede.handleSingleConsumer()
 	return nil
 }
 

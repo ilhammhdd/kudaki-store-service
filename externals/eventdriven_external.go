@@ -47,6 +47,35 @@ func (edc *EventDrivenExternal) produce(key string, msg []byte) {
 	log.Printf("produced %s : partition = %d, offset = %d, key = %s, duration = %f seconds", edc.outTopic, partition, offset, key, duration.Seconds())
 }
 
+func (edc *EventDrivenExternal) handleSingleConsumer() {
+	cons := kafka.NewConsumption()
+	cons.Set(edc.inTopics[0], 0, sarama.OffsetNewest)
+	partCons, sig, closeChan := cons.Consume()
+	cl := adapters.ConsumerLog{EventName: edc.eventName}
+	defer close(closeChan)
+
+	for {
+		select {
+		case msg := <-partCons.Messages():
+			if inEvent, ok := edc.eventDrivenAdapter.ParseIn(msg.Value); ok {
+				cl.Log(msg.Partition, msg.Offset, string(msg.Key))
+				outEvent := edc.eventDrivenUsecase.Handle(inEvent)
+
+				if edc.PostUsecaseExecutor != nil {
+					edc.PostUsecaseExecutor.ExecutePostUsecase(inEvent, outEvent)
+				}
+
+				outKey, outMsg := edc.eventDrivenAdapter.ParseOut(outEvent)
+				edc.produce(outKey, outMsg)
+			}
+		case errs := <-partCons.Errors():
+			log.Printf("error while consuming %s : %s", edc.inTopics[0], errs.Err.Error())
+		case <-sig:
+			return
+		}
+	}
+}
+
 func (edc *EventDrivenExternal) handle() {
 	groupID := uuid.New().String()
 	cl := adapters.ConsumerLog{EventName: edc.eventName}
@@ -91,6 +120,31 @@ type EventDrivenDownstreamExternal struct {
 	PostUsecaseExecutor PostDownstreamUsecaseExecutor
 }
 
+func (edde *EventDrivenDownstreamExternal) handleSingleConsumer() {
+	cons := kafka.NewConsumption()
+	cons.Set(edde.inTopics[0], 0, sarama.OffsetNewest)
+	partCons, sig, closeChan := cons.Consume()
+	cl := adapters.ConsumerLog{EventName: edde.eventName}
+	defer close(closeChan)
+
+	for {
+		select {
+		case msg := <-partCons.Messages():
+			if inEvent, ok := edde.eventDrivenAdapter.ParseIn(msg.Value); ok {
+				cl.Log(msg.Partition, msg.Offset, string(msg.Key))
+				stat := edde.eventDrivenUsecase.Handle(inEvent)
+
+				if edde.PostUsecaseExecutor != nil {
+					edde.PostUsecaseExecutor.ExecutePostDownstreamUsecase(inEvent, stat)
+				}
+			}
+		case errs := <-partCons.Errors():
+			log.Printf("error while consuming %s : %s", edde.inTopics[0], errs.Err.Error())
+		case <-sig:
+			return
+		}
+	}
+}
 func (edde *EventDrivenDownstreamExternal) handle() {
 	groupID := uuid.New().String()
 	cl := adapters.ConsumerLog{EventName: edde.eventName}

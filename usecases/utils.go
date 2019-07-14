@@ -28,7 +28,7 @@ type RedisearchSanitizer interface {
 }
 
 func IntendedItemExists(dbo DBOperator, storefront *store.Storefront, itemUUID string) (*store.Item, bool) {
-	row, err := dbo.QueryRow("SELECT name,amount,unit,price,description,photo,rating FROM items WHERE storefront_uuid=? AND uuid=?;", storefront.Uuid, itemUUID)
+	row, err := dbo.QueryRow("SELECT name,amount,unit,price,description,photo,rating FROM kudaki_store.items WHERE storefront_uuid=? AND uuid=?;", storefront.Uuid, itemUUID)
 	errorkit.ErrorHandled(err)
 
 	var intendedItem store.Item

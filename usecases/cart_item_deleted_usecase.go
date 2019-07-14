@@ -35,7 +35,7 @@ func (cid *CartItemDeleted) Handle(in proto.Message) *UsecaseHandlerResponse {
 }
 
 func (cid *CartItemDeleted) itemExists(item *store.Item) bool {
-	row, err := cid.DBO.QueryRow("SELECT storefront_uuid,name,amount,unit,price,description,photo,rating FROM items WHERE uuid=?;", item.Uuid)
+	row, err := cid.DBO.QueryRow("SELECT storefront_uuid,name,amount,unit,price,description,photo,rating FROM kudaki_store.items WHERE uuid=?;", item.Uuid)
 	errorkit.ErrorHandled(err)
 
 	item.Storefront = new(store.Storefront)

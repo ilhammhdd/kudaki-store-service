@@ -29,7 +29,7 @@ func (cia *CartItemAdded) Work() interface{} {
 	// 	eventName:           events.RentalTopic_CART_ITEM_ADDED.String(),
 	// 	inTopics:            []string{events.RentalTopic_CART_ITEM_ADDED.String()}}
 
-	// edde.handle()
+	// edde.handleSingleConsumer()
 	return nil
 }
 

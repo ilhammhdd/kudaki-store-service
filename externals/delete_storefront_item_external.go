@@ -26,7 +26,7 @@ func (dsi *DeleteStorefrontItem) Work() interface{} {
 		inTopics:            []string{events.StorefrontServiceCommandTopic_DELETE_STOREFRONT_ITEM.String()},
 		outTopic:            events.StorefrontServiceEventTopic_STOREFRONT_ITEM_DELETED.String()}
 
-	ede.handle()
+	ede.handleSingleConsumer()
 	return nil
 }
 

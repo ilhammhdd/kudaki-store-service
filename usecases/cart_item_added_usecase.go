@@ -38,7 +38,7 @@ func (cia *CartItemAdded) Handle(in proto.Message) *UsecaseHandlerResponse {
 }
 
 func (cia *CartItemAdded) itemExists(item *store.Item) bool {
-	row, err := cia.DBO.QueryRow("SELECT id FROM items WHERE uuid=?;", item.Uuid)
+	row, err := cia.DBO.QueryRow("SELECT id FROM kudaki_store.items WHERE uuid=?;", item.Uuid)
 	errorkit.ErrorHandled(err)
 
 	var itemID uint64
@@ -49,7 +49,7 @@ func (cia *CartItemAdded) itemExists(item *store.Item) bool {
 }
 
 func (cia *CartItemAdded) storefrontExists(storefront *store.Storefront) bool {
-	row, err := cia.DBO.QueryRow("SELECT id FROM storefronts WHERE uuid=?;", storefront.Uuid)
+	row, err := cia.DBO.QueryRow("SELECT id FROM kudaki_store.storefronts WHERE uuid=?;", storefront.Uuid)
 	errorkit.ErrorHandled(err)
 
 	var storefrontID uint64

@@ -21,7 +21,7 @@ func (cid *CartItemDeleted) Work() interface{} {
 	// 	eventName:           events.RentalTopic_CART_ITEM_DELETED.String(),
 	// 	inTopics:            []string{events.RentalTopic_CART_ITEM_DELETED.String()}}
 
-	// edde.handle()
+	// edde.handleSingleConsumer()
 	return nil
 }
 

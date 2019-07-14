@@ -21,7 +21,7 @@ func (ooa *OwnerOrderApproved) Work() interface{} {
 		eventName:           events.OrderServiceEventTopic_OWNER_ORDER_APPROVED.String(),
 		inTopics:            []string{events.OrderServiceEventTopic_OWNER_ORDER_APPROVED.String()}}
 
-	edde.handle()
+	edde.handleSingleConsumer()
 	return nil
 }
 

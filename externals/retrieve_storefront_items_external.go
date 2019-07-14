@@ -23,6 +23,6 @@ func (rsi *RetrieveStorefrontItems) Work() interface{} {
 		inTopics:           []string{events.StorefrontServiceCommandTopic_RETRIEVE_STOREFRONT_ITEMS.String()},
 		outTopic:           events.StorefrontServiceEventTopic_STOREFRONT_ITEMS_RETRIEVED.String()}
 
-	ede.handle()
+	ede.handleSingleConsumer()
 	return nil
 }

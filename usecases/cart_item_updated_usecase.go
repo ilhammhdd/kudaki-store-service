@@ -44,7 +44,7 @@ func (ciu *CartItemUpdated) Handle(in proto.Message) *UsecaseHandlerResponse {
 }
 
 func (ciu *CartItemUpdated) itemExists(itemUUID string) *store.Item {
-	row, err := ciu.DBO.QueryRow("SELECT storefront_uuid,name,amount,unit,price,description,photo,rating FROM items WHERE uuid=?;", itemUUID)
+	row, err := ciu.DBO.QueryRow("SELECT storefront_uuid,name,amount,unit,price,description,photo,rating FROM kudaki_store.items WHERE uuid=?;", itemUUID)
 	errorkit.ErrorHandled(err)
 
 	var item store.Item
