@@ -25,7 +25,7 @@ func (usi *UpdateStorefrontItem) Work() interface{} {
 		inTopics:            []string{events.StorefrontServiceCommandTopic_UPDATE_STOREFRONT_ITEM.String()},
 		outTopic:            events.StorefrontServiceEventTopic_STOREFRONT_ITEMS_UPDATED.String()}
 
-	ede.handleSingleConsumer()
+	ede.handle()
 	return nil
 }
 

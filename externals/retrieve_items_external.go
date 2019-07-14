@@ -12,6 +12,6 @@ func (ri RetrieveItems) Work() interface{} {
 	// 	inTopics:           []string{events.StoreTopic_RETRIEVE_ITEMS_REQUESTED.String()},
 	// 	outTopic:           events.StoreTopic_ITEMS_RETRIEVED.String()}
 
-	// ede.handleSingleConsumer()
+	// ede.handle()
 	return nil
 }
