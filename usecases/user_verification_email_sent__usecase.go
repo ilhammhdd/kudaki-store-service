@@ -15,10 +15,10 @@ type UserVerificationEmailSent struct {
 }
 
 func (su *UserVerificationEmailSent) Handle(in proto.Message) *UsecaseHandlerResponse {
-	inEvent := in.(*events.Signedup)
+	inEvent := in.(*events.UserVerificationEmailSent)
 
 	return &UsecaseHandlerResponse{
-		Data: su.initStorefront(inEvent.Profile.User),
+		Data: su.initStorefront(inEvent.User),
 		Ok:   true,
 	}
 }

@@ -8,7 +8,7 @@ import (
 type UserVerificationEmailSent struct{}
 
 func (su *UserVerificationEmailSent) ParseIn(msg []byte) (proto.Message, bool) {
-	var inEvent events.Signedup
+	var inEvent events.UserVerificationEmailSent
 	if proto.Unmarshal(msg, &inEvent) == nil {
 		return &inEvent, true
 	}
