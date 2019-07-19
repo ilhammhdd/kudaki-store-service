@@ -32,6 +32,7 @@ func main() {
 	wp.Worker <- new(externals.RetrieveStorefrontItems)
 	wp.Worker <- new(externals.OwnerOrderApproved)
 	wp.Worker <- new(externals.UserVerificationEmailSent)
+	wp.Worker <- new(externals.ItemsReviewed)
 
 	wp.PoolWG.Wait()
 }

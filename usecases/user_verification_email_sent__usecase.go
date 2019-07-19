@@ -25,9 +25,10 @@ func (su *UserVerificationEmailSent) Handle(in proto.Message) *UsecaseHandlerRes
 
 func (su *UserVerificationEmailSent) initStorefront(usr *user.User) *store.Storefront {
 	return &store.Storefront{
-		CreatedAt: ptypes.TimestampNow(),
-		Rating:    0.0,
-		TotalItem: 0,
-		UserUuid:  usr.Uuid,
-		Uuid:      uuid.New().String()}
+		CreatedAt:      ptypes.TimestampNow(),
+		Rating:         0.0,
+		TotalItem:      0,
+		TotalRawRating: 0.0,
+		UserUuid:       usr.Uuid,
+		Uuid:           uuid.New().String()}
 }
