@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 	"time"
 
@@ -23,18 +22,10 @@ func (rsi *RetrieveStorefrontItems) Handle(in proto.Message) (out proto.Message)
 	inEvent, outEvent := rsi.initInOutEvent(in)
 
 	storefront := rsi.retrieveStorefrontResult(outEvent.Requester)
-	log.Println("storefront : ", storefront)
 
 	items := rsi.retrieveItemsResult(inEvent, storefront)
 	rsi.ResultSchemer.SetResultSources(storefront, items)
 	outEvent.Result = rsi.ResultSchemer.ParseToResult()
-
-	// storefront := rsi.retrieveStorefront(outEvent.Requester)
-
-	// items := rsi.retrieveItems(inEvent, storefront)
-	// rsi.ResultSchemer.SetResultSources(storefront, items)
-	// outEvent.Result = rsi.ResultSchemer.ParseToResult()
-
 	outEvent.EventStatus.HttpCode = http.StatusOK
 
 	return outEvent
@@ -75,36 +66,6 @@ func (rsi *RetrieveStorefrontItems) retrieveStorefront(usr *user.User) *store.St
 	return &storefront
 }
 
-func (rsi *RetrieveStorefrontItems) retrieveItems(inEvent *events.RetrieveStorefrontItems, storefront *store.Storefront) []*store.Item {
-	var storefrontItems []*store.Item
-
-	rows, err := rsi.DBO.Query("SELECT i.id,i.uuid,i.storefront_uuid,i.name,i.amount,i.unit,i.price,i.price_duration,i.description,i.photo,i.rating,i.length,i.width,i.height,i.color,i.unit_of_measurement,i.created_at FROM (SELECT id FROM kudaki_store.items WHERE storefront_uuid = ? LIMIT ?, ?) i_ids JOIN kudaki_store.items i ON i.id = i_ids.id;", storefront.Uuid, inEvent.Offset, inEvent.Limit)
-	errorkit.ErrorHandled(err)
-
-	for rows.Next() {
-		var item store.Item
-		item.Storefront = new(store.Storefront)
-		var priceDuration string
-		var itemDimension store.ItemDimension
-		var unitOfMeasurement string
-		var createdAt int64
-
-		rows.Scan(&item.Id, &item.Uuid, &item.Storefront.Uuid, &item.Name, &item.Amount, &item.Unit, &item.Price, &priceDuration, &item.Description, &item.Photo, &item.Rating, &itemDimension.Length, &itemDimension.Width, &itemDimension.Height, &item.Color, &unitOfMeasurement, &createdAt)
-
-		createdAtProto, err := ptypes.TimestampProto(time.Unix(createdAt, 0))
-		errorkit.ErrorHandled(err)
-		item.CreatedAt = createdAtProto
-
-		itemDimension.UnitOfMeasurement = store.UnitofMeasurement(store.UnitofMeasurement_value[unitOfMeasurement])
-		item.ItemDimension = &itemDimension
-		item.PriceDuration = store.PriceDuration(store.PriceDuration_value[priceDuration])
-
-		storefrontItems = append(storefrontItems, &item)
-	}
-
-	return storefrontItems
-}
-
 type StorefrontTemp struct {
 	store.Storefront
 	RatingT    float64 `json:"rating"`
@@ -113,6 +74,7 @@ type StorefrontTemp struct {
 
 type ItemTemp struct {
 	store.Item
+	PriceDurationT     string  `json:"price_duration"`
 	StorefrontUuidT    string  `json:"storefront_uuid"`
 	LengthT            int32   `json:"length"`
 	WidthT             int32   `json:"width"`
@@ -150,7 +112,24 @@ func (rsi *RetrieveStorefrontItems) retrieveItemsResult(inEvent *events.Retrieve
 		var item ItemTemp
 		var priceDuration string
 
-		rows.Scan(&item.Id, &item.Uuid, &item.StorefrontUuidT, &item.Name, &item.Amount, &item.Unit, &item.Price, &priceDuration, &item.Description, &item.Photo, &item.Rating, &item.LengthT, &item.WidthT, &item.HeightT, &item.Color, &item.UnitofMeasurementT, &item.CreatedAtT)
+		rows.Scan(
+			&item.Id,
+			&item.Uuid,
+			&item.StorefrontUuidT,
+			&item.Name,
+			&item.Amount,
+			&item.Unit,
+			&item.Price,
+			&item.PriceDurationT,
+			&item.Description,
+			&item.Photo,
+			&item.Rating,
+			&item.LengthT,
+			&item.WidthT,
+			&item.HeightT,
+			&item.Color,
+			&item.UnitofMeasurementT,
+			&item.CreatedAtT)
 
 		item.PriceDuration = store.PriceDuration(store.PriceDuration_value[priceDuration])
 
