@@ -25,6 +25,7 @@ func (ooa *OwnerOrderApproved) retrieveItemsToBeUpdated(inEvent *events.OwnerOrd
 	rows, err := ooa.DBO.Query("SELECT ci.total_item AS ci_total_item, i.uuid AS i_uuid, i.amount AS i_amount, sf.uuid AS sf_uuid, sf.total_item AS sf_total_item FROM kudaki_order.owner_orders oo JOIN kudaki_order.orders o ON oo.order_uuid = o.uuid JOIN kudaki_rental.carts c ON o.cart_uuid = o.cart_uuid JOIN kudaki_rental.cart_items ci ON c.uuid = ci.cart_uuid JOIN kudaki_store.items i ON ci.item_uuid = i.uuid JOIN kudaki_store.storefronts sf ON i.storefront_uuid = sf.uuid WHERE oo.uuid = ?;",
 		inEvent.OwnerOrder.Uuid)
 	errorkit.ErrorHandled(err)
+	defer rows.Close()
 
 	var ownerOrderApprovedUpdateItems []*OwnerOrderApprovedUpdateItem
 	for rows.Next() {

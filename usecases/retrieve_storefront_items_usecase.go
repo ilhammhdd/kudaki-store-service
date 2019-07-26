@@ -107,6 +107,7 @@ func (rsi *RetrieveStorefrontItems) retrieveItemsResult(inEvent *events.Retrieve
 
 	rows, err := rsi.DBO.Query("SELECT i.id,i.uuid,i.storefront_uuid,i.name,i.amount,i.unit,i.price,i.price_duration,i.description,i.photo,i.rating,i.length,i.width,i.height,i.color,i.unit_of_measurement,i.created_at FROM (SELECT id FROM kudaki_store.items WHERE storefront_uuid = ? LIMIT ?, ?) i_ids JOIN kudaki_store.items i ON i.id = i_ids.id;", storefront.Uuid, inEvent.Offset, inEvent.Limit)
 	errorkit.ErrorHandled(err)
+	defer rows.Close()
 
 	for rows.Next() {
 		var item ItemTemp

@@ -67,6 +67,7 @@ func (ir *ItemsReviewed) retrieveStorefronts(inEvent *events.ItemsReviewed) []*S
 
 	rows, err := ir.DBO.Query(query, sfUuids...)
 	errorkit.ErrorHandled(err)
+	defer rows.Close()
 	var createdAt int64
 
 	for rows.Next() {
