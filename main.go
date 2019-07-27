@@ -31,6 +31,7 @@ func main() {
 	wp.Worker <- new(externals.UpdateStorefrontItem)
 	wp.Worker <- new(externals.RetrieveStorefrontItems)
 	wp.Worker <- new(externals.OwnerOrderApproved)
+	wp.Worker <- new(externals.OwnerConfirmedReturnment)
 	wp.Worker <- new(externals.UserVerificationEmailSent)
 	wp.Worker <- new(externals.ItemsReviewed)
 
