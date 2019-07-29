@@ -37,6 +37,6 @@ schema:
     - .realize
     - vendor
     - .vendor-new
-    scritps:
+    scripts:
     - type: before
       command: taskkill /IM "kudaki-storefront-service.exe" /F
